@@ -73,6 +73,43 @@ for s in states:
 value = np.linalg.solve(A,b)
 print(np.round(value,1).reshape((5,5)))
 
+# Compute optimal Bellman equation for v_pi
+v_pi_star = np.zeros((25,1))
+its = 0
+while True:
+  # Iterate
+  its += 1
+  Delta = 0
+  for s in states:
+    v =  v_pi_star[s].copy()
+    for a in actions:
+      tmp = 0
+      for s_prime in states:
+        for r in rewards:
+          tmp += state_transition(s_prime,r,s,a) * (r + gamma * v_pi_star[s_prime])
+      v_pi_star[s] = max(v_pi_star[s],tmp)
+    Delta = max(Delta, abs(v-v_pi_star[s]))
+  if Delta < 1e-10:
+    break
+  print(its,Delta)
 
-
-  
+# Compute optimal policy from optimal state-value function
+optimal_policy = {}
+for s in states:
+  optimal_actions = []
+  optimal_value = - np.Infinity
+  for a in actions:
+    for s_prime in states:
+      for r in rewards:
+        if state_transition(s_prime, r, s, a)>0:
+          v = r + gamma * state_transition(s_prime, r, s, a) * v_pi_star[s_prime]
+          if v>optimal_value:
+            optimal_value = v
+            optimal_actions = []
+          if abs(optimal_value-v)<1e-5:
+            optimal_actions.append(a)
+  optimal_policy[s] = optimal_actions
+            
+from functools import reduce
+from tabulate import tabulate
+print(tabulate(np.array([reduce(lambda x,y:x+y,[i[0] for i in v]) for v in optimal_policy.values()]).reshape((5,5))))
