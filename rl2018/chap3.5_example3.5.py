@@ -1,5 +1,7 @@
 # Gridworld
 import numpy as np
+import tabulate as tb
+import rl_functions
 
 # States are indices 0 to 24
 # +--+--+--+--+--+
@@ -15,10 +17,10 @@ import numpy as np
 # +--+--+--+--+--+
 states = list(range(25))
 
-# Actions are "left", "up", "right", "down"
+# Actions
 actions = ["left","up","right","down"]
 
-# Rewards are -1, 0, 5, 10
+# Rewards
 rewards = [-1, 0, 5, 10]
 
 state_A = 1
@@ -57,59 +59,20 @@ def state_transition(s_prime, r, s, a):
 def policy(a,s):
   return 1 / len(actions)
 
-# Compute the Bellman equation:
-# For all s:
-# (1 - Sum(a,s_prime,r) pi(a|s) * p(s_prime,r|s,a) * gamma ) * v_pi(s) = Sum(a,s_prime,r) pi(a|s) * p(s_prime,r|s,a) * r
-A = np.zeros((25,25))
-b = np.zeros((25,1))
-for s in states:
-  A[s,s] = 1
-  for s_prime in states:
-    for a in actions:
-      for r in rewards:
-        b[s] += policy(a,s) * state_transition(s_prime,r,s,a) * r
-        A[s,s_prime] -= policy(a,s) * state_transition(s_prime,r,s,a) * gamma
-    
-value = np.linalg.solve(A,b)
+value, _ = rl_functions.evaluate_policy_iterative(states,actions,rewards,state_transition,policy,gamma)
 print(np.round(value,1).reshape((5,5)))
 
-# Compute optimal Bellman equation for v_pi
-v_pi_star = np.zeros((25,1))
-its = 0
-while True:
-  # Iterate
-  its += 1
-  Delta = 0
-  for s in states:
-    v =  v_pi_star[s].copy()
-    for a in actions:
-      tmp = 0
-      for s_prime in states:
-        for r in rewards:
-          tmp += state_transition(s_prime,r,s,a) * (r + gamma * v_pi_star[s_prime])
-      v_pi_star[s] = max(v_pi_star[s],tmp)
-    Delta = max(Delta, abs(v-v_pi_star[s]))
-  if Delta < 1e-10:
-    break
-  print(its,Delta)
+# Compute improved policy from value function
+value = rl_functions.evaluate_policy_linear_system(states,actions,rewards,state_transition,policy,gamma)
+improved_policy = rl_functions.improve_policy_from_value_function(states,actions,rewards,state_transition,value,gamma)
+value = rl_functions.evaluate_policy_linear_system(states,actions,rewards,state_transition,improved_policy,gamma)
+improved_policy = rl_functions.improve_policy_from_value_function(states,actions,rewards,state_transition,value,gamma)
+value = rl_functions.evaluate_policy_linear_system(states,actions,rewards,state_transition,improved_policy,gamma)
+print(np.round(value,1).reshape((5,5)))
 
-# Compute optimal policy from optimal state-value function
-optimal_policy = {}
+tmp = [""]*25
 for s in states:
-  optimal_actions = []
-  optimal_value = - np.Infinity
   for a in actions:
-    for s_prime in states:
-      for r in rewards:
-        if state_transition(s_prime, r, s, a)>0:
-          v = r + gamma * state_transition(s_prime, r, s, a) * v_pi_star[s_prime]
-          if v>optimal_value:
-            optimal_value = v
-            optimal_actions = []
-          if abs(optimal_value-v)<1e-5:
-            optimal_actions.append(a)
-  optimal_policy[s] = optimal_actions
-            
-from functools import reduce
-from tabulate import tabulate
-print(tabulate(np.array([reduce(lambda x,y:x+y,[i[0] for i in v]) for v in optimal_policy.values()]).reshape((5,5))))
+    if improved_policy(a,s)>0:
+      tmp[s] += a[0]
+print(tb.tabulate(np.array(tmp).reshape((5,5))))

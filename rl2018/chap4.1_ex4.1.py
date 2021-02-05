@@ -1,6 +1,7 @@
 # Gridworld
 import numpy as np
-import tabulate
+import tabulate as tb
+import rl_functions
 
 # States are indices 0 to 14 - 0 is terminal
 # +--+--+--+--+
@@ -13,16 +14,17 @@ import tabulate
 # |12|13|14|  |
 # +--+--+--+--+
 states = list(range(15))
-nstates = len(states)
 
-# Actions are "left", "up", "right", "down"
+# Actions
 actions = ["left","up","right","down"]
 
-# Rewards are -1
+# Rewards
 rewards = [-1,0]
 
 # Discount parameter
 gamma = 1
+
+terminal_states = [0]
 
 def state_transition(s_prime, r, s, a):
   if s==0:
@@ -55,34 +57,16 @@ def state_transition(s_prime, r, s, a):
 def policy(a,s):
   return 1 / len(actions)
 
-# Iterative policy evaluation
-v_pi = np.zeros((nstates,1))
-its = 0
-while True:
-  # Iterate
-  its += 1
-  Delta = 0
-  v_pi_new = np.zeros((nstates,1))
-  for s in states:
-    for a in actions:
-      for s_prime in states:
-        for r in rewards:
-          v_pi_new[s] += policy(a,s) * state_transition(s_prime,r,s,a) * (r + gamma * v_pi[s_prime])
-    Delta = max(Delta, abs( v_pi_new[s]-v_pi[s]))
-  v_pi = v_pi_new.copy()
-  if its in [1,2,3,10] or Delta < 1e-10:
-    print(its,Delta)
-    print(tabulate.tabulate(np.round(np.array(v_pi.tolist()+[v_pi[0]]).reshape((4,4)),1)))
+v = rl_functions.evaluate_policy_linear_system(states,actions,rewards,state_transition,policy,gamma,terminal_states)
+_, arr_v = rl_functions.evaluate_policy_iterative(states,actions,rewards,state_transition,policy,gamma)
+
+for (i,x) in enumerate(arr_v):
+  if i in [1,2,3,10,425]:
+    print("Iteration: ",i)
+    print(tb.tabulate(np.round(np.array(v.tolist()+[v[0]]).reshape((4,4)),1)))
     print()
-    if Delta < 1e-8:
-      break
-    
-def q(s,a):
-  val = 0
-  for s_prime in states:
-    for r in rewards:
-      val += state_transition(s_prime, r, s, a) * (r + gamma * v_pi[s_prime])
-  return val
-      
-print('q(11,"down")',q(11,"down"))
-print('q( 7,"down")',q( 7,"down"))
+
+q = rl_functions.get_action_value_function(states,rewards,state_transition,gamma,v)
+
+print('q(11,"down")',round(q(11,"down"),1))
+print('q( 7,"down")',round(q( 7,"down"),1))

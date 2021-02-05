@@ -1,6 +1,6 @@
 # Gridworld
 import numpy as np
-import tabulate
+import rl_functions
 
 # States are indices 0 to 14 - 0 is terminal
 # +--+--+--+--+
