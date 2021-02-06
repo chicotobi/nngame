@@ -6,18 +6,16 @@ def evaluate_policy_linear_system(states,actions,rewards,state_transition,policy
   nstates = len(states)
   A = np.zeros((nstates,nstates))
   b = np.zeros((nstates,1))
-  for s in states:
-    A[s,s] = 1
-    for s_prime in states:
+  for (i,s) in enumerate(states):
+    A[i,i] = 1
+    for (j,s_prime) in enumerate(states):
       for a in actions:
         for r in rewards:
-          b[s] += policy(a,s) * state_transition(s_prime,r,s,a) * r
-          A[s,s_prime] -= policy(a,s) * state_transition(s_prime,r,s,a) * gamma
-
-  states_plus = [s for s in states if s not in terminal_states]
-
+          b[i] += policy(a,s) * state_transition(s_prime,r,s,a) * r
+          A[i,j] -= policy(a,s) * state_transition(s_prime,r,s,a) * gamma       
+  idx_states_plus = [i for (i,s) in enumerate(states) if s not in terminal_states]
   value = np.zeros((nstates,1))
-  value[states_plus] = np.linalg.solve(A[np.ix_(states_plus,states_plus)],b[states_plus])
+  value[idx_states_plus] = np.linalg.solve(A[np.ix_(idx_states_plus,idx_states_plus)],b[idx_states_plus])
   return value
 
 def evaluate_policy_iterative(states,actions,rewards,state_transition,policy,gamma,tol=1e-10):
@@ -26,17 +24,15 @@ def evaluate_policy_iterative(states,actions,rewards,state_transition,policy,gam
   arr_v = []
   its = 0
   while True:
-    # Iterate
     arr_v.append(v)
     its += 1
-    Delta = 0
     v_new = np.zeros((nstates,1))
-    for s in states:
+    for (i,s) in enumerate(states):
       for a in actions:
         for s_prime in states:
           for r in rewards:
-            v_new[s] += policy(a,s) * state_transition(s_prime,r,s,a) * (r + gamma * v[s_prime])
-      Delta = max(Delta, abs(v_new[s]-v[s]))
+            v_new[i] += policy(a,s) * state_transition(s_prime,r,s,a) * (r + gamma * v[s_prime])
+    Delta = max(abs(v_new-v))
     v = v_new.copy()
     if Delta < tol:
       break
@@ -44,19 +40,19 @@ def evaluate_policy_iterative(states,actions,rewards,state_transition,policy,gam
 
 def improve_policy_from_value_function(states,actions,rewards,state_transition,value_function,gamma,tol=1e-5):
   improved_policy = {}
-  for s in states:
+  for (i,s) in enumerate(states):
     improved_actions = []
     improved_value = - np.Infinity
     for a in actions:
-      for s_prime in states:
+      v = 0
+      for (j,s_prime) in enumerate(states):
         for r in rewards:
-          if state_transition(s_prime, r, s, a)>0:
-            v = r + gamma * state_transition(s_prime, r, s, a) * value_function[s_prime]
-            if v > improved_value:
-              improved_value = v
-              improved_actions = []
-            if abs(improved_value-v)<tol:
-              improved_actions.append(a)
+          v += state_transition(s_prime, r, s, a) * (r + gamma * value_function[j])
+      if v > improved_value:
+        improved_value = v
+        improved_actions = []
+      if abs(improved_value-v)<tol:
+        improved_actions.append(a)
     improved_policy[s] = improved_actions
   def p(a,s):
     if a in improved_policy[s]:
@@ -80,16 +76,13 @@ def evaluate_policy_linear_system_two_arg(states,actions,state_transition,policy
   A = np.zeros((nstates,nstates))
   b = np.zeros((nstates,1))
   for s in states:
-    print(s)
     A[idx[s],idx[s]] = 1
     for a in actions:
-      tmp = state_transition(s,a)
-      for (s_prime, r, p) in tmp:
+      for (s_prime, r, p) in state_transition(s,a):
         b[idx[s]] += policy(a,s) * p * r
         A[idx[s],idx[s_prime]] -= policy(a,s) * p * gamma
 
   idx_states_plus = [idx[s] for s in states if s not in terminal_states]
-
   value = np.zeros((nstates,1))
   value[idx_states_plus] = np.linalg.solve(A[np.ix_(idx_states_plus,idx_states_plus)],b[idx_states_plus])
   return value
@@ -97,24 +90,22 @@ def evaluate_policy_linear_system_two_arg(states,actions,state_transition,policy
 def improve_policy_from_value_function_two_arg(states,actions,state_transition,value_function,gamma,tol=1e-5):
   idx = {j:i for (i,j) in enumerate(states)}
   improved_policy = {}
-  for s in states:
+  for (i,s) in enumerate(states):
     improved_actions = []
     improved_value = - np.Infinity
     for a in actions:
-      print(s,a)
-      tmp = state_transition(s,a)
       v = 0
-      for (s_prime, r, p) in tmp:
-        v += r + gamma * p * value_function[idx[s_prime]]
+      for (s_prime, r, p) in state_transition(s,a):
+        v += p * (r + gamma * value_function[idx[s_prime]])
       if v > improved_value:
         improved_value = v
         improved_actions = []
       if abs(improved_value-v)<tol:
         improved_actions.append(a)
     improved_policy[s] = improved_actions
-  def myf(a,s):
+  def p(a,s):
     if a in improved_policy[s]:
       return 1/len(improved_policy[s])
     else:
       return 0
-  return myf
+  return p

@@ -70,3 +70,16 @@ q = rl_functions.get_action_value_function(states,rewards,state_transition,gamma
 
 print('q(11,"down")',round(q(11,"down"),1))
 print('q( 7,"down")',round(q( 7,"down"),1))
+
+improved_policy = rl_functions.improve_policy_from_value_function(states,actions,rewards,state_transition,v,gamma)
+v = rl_functions.evaluate_policy_linear_system(states,actions,rewards,state_transition,improved_policy,gamma,terminal_states)
+
+print(tb.tabulate(np.round(np.array(v.tolist()+[v[0]]).reshape((4,4)),1)))
+improved_policy = rl_functions.improve_policy_from_value_function(states,actions,rewards,state_transition,v,gamma)
+
+tmp = [""]*15
+for s in states:
+  for a in actions:
+    if improved_policy(a,s)>0:
+      tmp[s] += a[0]
+print(tb.tabulate(np.array(tmp+[tmp[0]]).reshape((4,4))))
