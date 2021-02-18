@@ -1,14 +1,16 @@
 import numpy as np
 import tabulate as tb
+from base_environment_with_model import BaseEnvironmentWithModel
 
-class Gridworld:
+class Gridworld(BaseEnvironmentWithModel):
     
   def __init__(self,sx,sy):
+    states = [(x,y) for x in range(sx) for y in range(sy)]    
+    actions = ["up","left","down","right"]
+    rewards = [-1,0]
+    super().__init__(states,actions,rewards)    
     self.sx = sx
     self.sy = sy
-    self.states = [(x,y) for x in range(sx) for y in range(sy)]    
-    self.actions = ["up","left","down","right"]
-    self.rewards = [-1,0]
     
 class GridworldEx35(Gridworld):
   state_A = (1,4)

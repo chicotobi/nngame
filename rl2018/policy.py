@@ -26,7 +26,7 @@ class Policy(abc.ABC):
       self.actions = {s:valid_actions for s in states}
     else:
       raise ValueError
-    self.n_valid_actions = {k:len(v) for (k,v) in self.actions.items()}  
+    self.n_valid_actions = {s:len(a) for (s,a) in self.actions.items()}  
   @abc.abstractmethod
   def prob(self,a,s):
     ...
@@ -51,7 +51,7 @@ class BestActionPolicy(Policy):
     self.best_actions = best_actions
     self.n_best_actions = {s:len(a) for (s,a) in best_actions.items()}
   def prob(self,a,s):
-    if a in self.best_actions[s]:
+    if a in self.array[s]:
       return 1 / self.n_best_actions[s]
     return 0
   def get(self,s):
@@ -65,6 +65,8 @@ class DeterministicPolicy(Policy):
     return self.det_actions[s] == a
   def get(self,s):
     return self.det_actions[s]
+  def update(self,s,a):
+    self.det_actions[s] = a
   
 class EpsSoft(Policy):
   def __init__(self,states,valid_actions,eps,det_policy):
