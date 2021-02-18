@@ -35,7 +35,7 @@ def improve_policy_from_value_function(states,actions,rewards,state_transition,v
       if abs(improved_value-v)<tol:
         improved_actions.append(a)
     improved_policy[s] = improved_actions
-  d = policy.DeterministicPolicy(states,actions,improved_policy)
+  d = policy.BestActionPolicy(states,actions,improved_policy)
   return d
   
 def evaluate_policy_iterative(states,actions,rewards,state_transition,policy,gamma=1,tol=1e-10):
@@ -45,13 +45,13 @@ def evaluate_policy_iterative(states,actions,rewards,state_transition,policy,gam
   while True:
     arr_v.append(v)
     its += 1
-    v_new = v
+    v_new = {s:0 for s in states}
     for s in states:
       for a in actions:
         for s_prime in states:
           for r in rewards:
             v_new[s] += policy(a,s) * state_transition(s_prime,r,s,a) * (r + gamma * v[s_prime])
-    Delta = max([abs(v_new[s]-v_new[s]) for s in states])
+    Delta = max([abs(v[s]-v_new[s]) for s in states])
     v = v_new.copy()
     if Delta < tol:
       break
