@@ -18,48 +18,44 @@ def evaluate_policy_linear_system(states,actions,rewards,state_transition,policy
   value[idx_states_plus] = np.linalg.solve(A[np.ix_(idx_states_plus,idx_states_plus)],b[idx_states_plus])
   return value
 
-def evaluate_policy_iterative(states,actions,rewards,state_transition,policy,gamma=1,tol=1e-10):
-  nstates = len(states)
-  v = np.zeros((nstates,1))
-  arr_v = []
-  its = 0
-  while True:
-    arr_v.append(v)
-    its += 1
-    v_new = np.zeros((nstates,1))
-    for (i,s) in enumerate(states):
-      for a in actions:
-        for s_prime in states:
-          for r in rewards:
-            v_new[i] += policy(a,s) * state_transition(s_prime,r,s,a) * (r + gamma * v[s_prime])
-    Delta = max(abs(v_new-v))
-    v = v_new.copy()
-    if Delta < tol:
-      break
-  return v, arr_v
-
 def improve_policy_from_value_function(states,actions,rewards,state_transition,value_function,gamma=1,tol=1e-5):
+  import policy
   improved_policy = {}
-  for (i,s) in enumerate(states):
+  for s in states:
     improved_actions = []
     improved_value = - np.Infinity
     for a in actions:
       v = 0
-      for (j,s_prime) in enumerate(states):
+      for s_prime in states:
         for r in rewards:
-          v += state_transition(s_prime, r, s, a) * (r + gamma * value_function[j])
+          v += state_transition(s_prime, r, s, a) * (r + gamma * value_function[s_prime])
       if v > improved_value:
         improved_value = v
         improved_actions = []
       if abs(improved_value-v)<tol:
         improved_actions.append(a)
     improved_policy[s] = improved_actions
-  def p(a,s):
-    if a in improved_policy[s]:
-      return 1/len(improved_policy[s])
-    else:
-      return 0
-  return p
+  d = policy.DeterministicPolicy(states,actions,improved_policy)
+  return d
+  
+def evaluate_policy_iterative(states,actions,rewards,state_transition,policy,gamma=1,tol=1e-10):
+  v = {s:0 for s in states}
+  arr_v = []
+  its = 0
+  while True:
+    arr_v.append(v)
+    its += 1
+    v_new = v
+    for s in states:
+      for a in actions:
+        for s_prime in states:
+          for r in rewards:
+            v_new[s] += policy(a,s) * state_transition(s_prime,r,s,a) * (r + gamma * v[s_prime])
+    Delta = max([abs(v_new[s]-v_new[s]) for s in states])
+    v = v_new.copy()
+    if Delta < tol:
+      break
+  return v, arr_v
 
 def get_action_value_function(states,rewards,state_transition,gamma,value_function):
   def q(s,a):

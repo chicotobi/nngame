@@ -5,7 +5,7 @@ class Gridworld:
     self.sy = sy
     self.states = [(x,y) for x in range(sx) for y in range(sy)]    
     self.actions = ["up","left","down","right"]
-    self.rewards = [0]
+    self.rewards = [-1,0]
     
 class GridworldEx35(Gridworld):
   state_A = (1,4)
@@ -17,7 +17,7 @@ class GridworldEx35(Gridworld):
   
   def __init__(self):
     super().__init__(5,5)
-    self.rewards += []
+    self.rewards += [5,10]
   
   def state_transition(self,s_prime, r, s, a):
     x,y = s 
