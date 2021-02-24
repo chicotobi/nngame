@@ -1,24 +1,108 @@
-class Experiment:  
-  def __init__(self, environment, agent,):
+from policy import EpsSoft
+
+class Experiment:
+  def __init__(self, environment, agent, algorithm=None):
     self.env = environment
     self.agent = agent
+    self.varying_alpha = False
+    if algorithm == "MC Prediction":
+      self.policy_type = "On-policy"
+      self.update_inside = False
+      self.update_state_value = True
+      self.update_action_value = False
+      self.update_policy = False
+      self.varying_alpha = True
+    elif algorithm == "MC ES":
+      self.policy_type = "On-policy"
+      self.update_inside = False
+      self.update_state_value = False
+      self.update_action_value = True
+      self.update_policy = True
+      self.varying_alpha = False
+    elif algorithm == "Off-policy":
+      self.policy_type = "Off-policy"
+      self.save_episode = True
+      self.update_inside = False
+      self.eps = 0.05
+    if self.varying_alpha:      
+      self.NV = {s:0 for s in self.env.states}
+      self.NQ = {s:{a:0 for a in self.agent.p.valid_actions[s]} for s in self.env.states}
+    self.fixed_initial_state = None
     
-  def train(self, n_episodes, stepsize, callback, gamma=1, update_policy=False):
-    n_episodes = int(n_episodes)
-    for i in range(n_episodes):
-      callback(i)
-      s = self.env.get_random_state()
-      episode = []
-      while s:
-        a = self.agent.p.get(s)
-        s_prime,r = self.env.step(s,a)
-        episode.append((s,a,r))
-        s = s_prime
-      G = 0
-      for (s,a,r) in episode[::-1]:
-        G = gamma * G + r
-        self.agent.update_state_value(G,s,stepsize)
-        self.agent.update_action_value(G,s,a,stepsize)
-        if update_policy:
+  def episode(self):
+    if self.fixed_initial_state:
+      s = self.fixed_initial_state
+    else:
+      s = self.env.get_random_initial_state()
+    a = self.b.get(s)
+    ep = []
+    while True:      
+      s_prime,r = self.env.step(s,a)
+      if s_prime:
+        a_prime = self.b.get(s_prime)
+      if self.update_inside:
+        if self.update_state_value:
+          if self.varying_alpha:
+            self.varying_alpha_state(s)
+          self.agent.update_state_value_r(s,a,r,s_prime)
+        if self.update_action_value:
+          if self.varying_alpha:
+            self.varying_alpha_action(s,a)
+          self.agent.update_action_value_r(s,a,r,s_prime,a_prime)
+        if self.update_policy:
           self.agent.update_policy(s)
+      else:
+        ep.append((s,a,r))
+      if not s_prime:
+        break
+      s = s_prime
+      a = a_prime
+    return ep
+  
     
+  def train(self, n_episodes, callback):
+    n_episodes = int(n_episodes)
+    if self.policy_type == "On-policy":
+      self.b = self.agent.p
+      for i in range(n_episodes):
+        callback(i)
+        ep = self.episode()
+        G = 0
+        if not self.update_inside:
+          for (s,a,r) in ep[::-1]:
+            G = self.agent.gamma * G + r
+            if self.update_state_value:
+              if self.varying_alpha:
+                self.varying_alpha_state(s)
+              self.agent.update_state_value(G,s)
+            if self.update_action_value:
+              if self.varying_alpha:
+                self.varying_alpha_action(s,a)
+              self.agent.update_action_value(G,s,a)
+            if self.update_policy:
+              self.agent.update_policy(s)
+    else:
+      C = {s:{a:0 for a in self.agent.p.valid_actions[s]} for s in self.env.states}
+      for i in range(n_episodes):
+        self.b = EpsSoft(self.env.states,self.env.valid_actions,self.eps,self.agent.p)
+        episode = self.episode()
+        G = 0
+        W = 1
+        for (s,a,r) in episode[::-1]:
+          G = self.agent.gamma * G + r
+          C[s][a] += W
+          self.agent.alpha = W/C[s][a]
+          self.agent.update_action_value(G,s,a)
+          self.agent.update_policy(s)
+          if self.agent.p.get(s) != a:
+            break           
+          W *= 1/self.b.prob(a,s)
+        callback(i,episode)
+      
+  def varying_alpha_state(self,s):    
+    self.NV[s] += 1
+    self.agent.alpha = 1/self.NV[s]
+    
+  def varying_alpha_action(self,s,a):        
+    self.NQ[s][a] += 1
+    self.agent.alpha = 1/self.NQ[s][a]

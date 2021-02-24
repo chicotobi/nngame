@@ -8,13 +8,13 @@ from experiment import Experiment
 
 env = Blackjack()
 p = DeterministicPolicy(env.states,env.actions,{s:[s[0]<20] for s in env.states})
-agent = Agent(env.states,env.actions, p)
-experiment = Experiment(env, agent)
+agent = Agent(env.states,env.actions, p,alpha=0.005)
+experiment = Experiment(env, agent, "MC ES")
 
 def callback(i):
   if i%100000==0:
     print("Game",i)
-experiment.train(n_episodes = 1e6,stepsize=1e-3, callback=callback, gamma = 1, update_policy=True)
+experiment.train(n_episodes = 1e7, callback=callback)
 
 # Dealer-Label
 dealer_label = ["A"]+list(range(2,11))

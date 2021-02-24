@@ -11,12 +11,13 @@ class Blackjack(BaseEnvironment):
     states = [(a,b,c) for a in self.player for b in self.dealer for c in usable]
     
     actions = [0,1]
-    
+        
     super().__init__(states,actions)    
+    self.type_random_initial_state = 1
   
   def get_player_dealer(self):
     return self.player, self.dealer
-     
+       
   def card(self):
     c = min(10,math.ceil(npr.random()*13))
     return c+(c==1)*10

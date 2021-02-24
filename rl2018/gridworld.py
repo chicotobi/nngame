@@ -86,3 +86,36 @@ class GridworldEx35(Gridworld):
           tmp[s[0],s[1]] += a[0]
     print(tb.tabulate(np.flipud(tmp.transpose())))
     
+class WindyGridworld(Gridworld):
+  
+  def __init__(self):
+    super().__init__(10,7)
+    self.rewards = [-1]
+    self.start = (0,3)
+    self.goal = (7,3)
+          
+  def step(self,s,a):
+    x, y = s
+    r = -1
+    if a == "left" and x > 0:
+      x -= 1
+    if a == "right" and x < self.sx - 1:
+      x += 1
+    if a == "down" and y > 0:
+      y -= 1
+    if a == "up" and y < self.sy - 1:
+      y += 1
+    
+    if x in [3,4,5,8]:
+      y = min(y+1,self.sy-1)
+    if x in [6,7]:
+      y = min(y+2,self.sy-1)
+      
+    if (x,y) == self.goal:
+      return None, r
+    else:
+      return (x,y), r
+    
+  def state_transition(self,s_prime, r, s, a):
+    tmp1, tmp2 = self.step(s,a)
+    return tmp1 == s_prime and tmp2 == r
