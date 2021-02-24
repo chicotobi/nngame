@@ -97,6 +97,12 @@ class WindyGridworld(Gridworld):
   def step(self,s,a):
     x, y = s
     r = -1
+    
+    if x in [3,4,5,8]:
+      y = min(y+1,self.sy-1)
+    if x in [6,7]:
+      y = min(y+2,self.sy-1)
+      
     if a == "left" and x > 0:
       x -= 1
     if a == "right" and x < self.sx - 1:
@@ -106,10 +112,6 @@ class WindyGridworld(Gridworld):
     if a == "up" and y < self.sy - 1:
       y += 1
     
-    if x in [3,4,5,8]:
-      y = min(y+1,self.sy-1)
-    if x in [6,7]:
-      y = min(y+2,self.sy-1)
       
     if (x,y) == self.goal:
       return None, r

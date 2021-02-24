@@ -24,10 +24,18 @@ class Experiment:
       self.save_episode = True
       self.update_inside = False
       self.eps = 0.05
+    elif algorithm == "SARSA":
+      self.policy_type = "On-policy"
+      self.update_inside = True
+      self.update_state_value = False
+      self.update_action_value = True
+      self.update_policy = True
+      self.varying_alpha = False      
     if self.varying_alpha:      
       self.NV = {s:0 for s in self.env.states}
       self.NQ = {s:{a:0 for a in self.agent.p.valid_actions[s]} for s in self.env.states}
     self.fixed_initial_state = None
+    self.keep_episode = not self.update_inside
     
   def episode(self):
     if self.fixed_initial_state:
@@ -48,10 +56,11 @@ class Experiment:
         if self.update_action_value:
           if self.varying_alpha:
             self.varying_alpha_action(s,a)
-          self.agent.update_action_value_r(s,a,r,s_prime,a_prime)
+          if s_prime:
+            self.agent.update_action_value_r(s,a,r,s_prime,a_prime)
         if self.update_policy:
           self.agent.update_policy(s)
-      else:
+      if self.keep_episode:
         ep.append((s,a,r))
       if not s_prime:
         break
@@ -65,10 +74,9 @@ class Experiment:
     if self.policy_type == "On-policy":
       self.b = self.agent.p
       for i in range(n_episodes):
-        callback(i)
         ep = self.episode()
-        G = 0
         if not self.update_inside:
+          G = 0
           for (s,a,r) in ep[::-1]:
             G = self.agent.gamma * G + r
             if self.update_state_value:
@@ -81,6 +89,8 @@ class Experiment:
               self.agent.update_action_value(G,s,a)
             if self.update_policy:
               self.agent.update_policy(s)
+        if callback:
+          callback(i,ep)
     else:
       C = {s:{a:0 for a in self.agent.p.valid_actions[s]} for s in self.env.states}
       for i in range(n_episodes):

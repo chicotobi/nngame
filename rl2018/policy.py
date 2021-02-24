@@ -79,5 +79,5 @@ class EpsSoft(Policy):
     else:
       return misc.sample(self.remaining_actions[s])
   def update(self,s,a0):
-    self.det_policy[s] = a0
+    self.det_policy.det_actions[s] = a0
     self.remaining_actions[s] = [a for a in self.det_policy.valid_actions[s] if a != a0]
