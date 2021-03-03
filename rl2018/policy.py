@@ -49,7 +49,7 @@ class DeterministicPolicy(Policy):
     if best_actions:
       self.det_actions = {s:a[0] for (s,a) in best_actions.items()}
     else:
-      self.det_actions = {s:valid_actions[s][0] for s in states}      
+      self.det_actions = {s:self.valid_actions[s][0] for s in states}      
   def prob(self,a,s):
     return self.det_actions[s] == a
   def get(self,s):

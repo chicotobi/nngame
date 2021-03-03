@@ -12,6 +12,12 @@ class Gridworld(BaseEnvironmentWithModel):
     self.sx = sx
     self.sy = sy
     
+  def add_diagonal(self):
+    self.actions += ["upleft","upright","downleft","downright"]
+    
+  def add_stay(self):
+    self.actions += ["stay"]
+    
 class GridworldEx35(Gridworld):
   state_A = (1,4)
   state_A_prime = (1,0)
@@ -93,6 +99,7 @@ class WindyGridworld(Gridworld):
     self.rewards = [-1]
     self.start = (0,3)
     self.goal = (7,3)
+    self.stochastic = False
           
   def step(self,s,a):
     x, y = s
@@ -103,18 +110,57 @@ class WindyGridworld(Gridworld):
     if x in [6,7]:
       y = min(y+2,self.sy-1)
       
-    if a == "left" and x > 0:
+    if self.stochastic and x in [3,4,5,6,7,8]:
+      v = np.random.rand()
+      if v < 1/3:
+        y = min(y+1,self.sy-1)
+      elif v< 2/3:
+        y = max(y-1,0)
+      
+    if "left" in a and x > 0:
       x -= 1
-    if a == "right" and x < self.sx - 1:
+    if "right" in a and x < self.sx - 1:
       x += 1
-    if a == "down" and y > 0:
+    if "down" in a and y > 0:
       y -= 1
-    if a == "up" and y < self.sy - 1:
-      y += 1
-    
+    if "up" in a and y < self.sy - 1:
+      y += 1 
       
     if (x,y) == self.goal:
       return None, r
+    else:
+      return (x,y), r
+    
+  def state_transition(self,s_prime, r, s, a):
+    tmp1, tmp2 = self.step(s,a)
+    return tmp1 == s_prime and tmp2 == r
+  
+  
+class CliffGridworld(Gridworld):  
+  
+  def __init__(self):
+    super().__init__(12,4)
+    self.rewards = [-1]
+    self.start = (0,0)
+    self.goal = (11,0)
+    
+  def step(self,s,a):
+    x, y = s
+    r = -1
+    
+    if "left" in a and x > 0:
+      x -= 1
+    if "right" in a and x < self.sx - 1:
+      x += 1
+    if "down" in a and y > 0:
+      y -= 1
+    if "up" in a and y < self.sy - 1:
+      y += 1 
+      
+    if (x,y) == self.goal:
+      return None, r
+    elif 0 < x < 11 and y == 0:
+      return self.start, -100
     else:
       return (x,y), r
     

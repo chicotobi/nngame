@@ -12,6 +12,7 @@ class Agent:
       raise ValueError    
     self.alpha = alpha
     self.gamma = gamma
+    self.qlearn = False
     
   def update_state_value(self,G,s):
     self.V[s] += ( G - self.V[s] ) * self.alpha
@@ -21,9 +22,12 @@ class Agent:
           
   def update_action_value(self,G,s,a):
     self.Q[s][a] += ( G - self.Q[s][a] ) * self.alpha
-    
+        
   def update_action_value_r(self,s,a,r,s_prime,a_prime):
-    self.Q[s][a] += ( r + self.gamma * self.Q[s_prime][a_prime] - self.Q[s][a] ) * self.alpha
+    if self.qlearn:
+      self.Q[s][a] += ( r + self.gamma * max(self.Q[s_prime].values()) - self.Q[s][a] ) * self.alpha
+    else:
+      self.Q[s][a] += ( r + self.gamma * self.Q[s_prime][a_prime] - self.Q[s][a] ) * self.alpha
 
   def update_policy(self,s):    
     a = misc.argmax(self.Q[s])

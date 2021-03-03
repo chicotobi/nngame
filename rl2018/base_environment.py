@@ -10,6 +10,8 @@ class BaseEnvironment(metaclass=abc.ABCMeta):
     self.counter = 0
     if valid_actions:
       self.valid_actions = valid_actions
+    else:
+      self.valid_actions = {s:actions for s in states}
     
   def get_random_state(self):
     return self.states[npr.choice(self.n_states)]
