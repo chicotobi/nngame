@@ -1,0 +1,17 @@
+Fundamentals of Reinforcement Learning:
+Week 1: Chapter 2-2.7, 2.10
+Week 2: Chapter 3.3
+Week 3: Chapter 3.5-3.8
+Week 4: Chapter 4.1-4.4, 4.6-4.7
+
+Sample-based methods:
+Week 1: Chapter 5-5.5
+Week 2: Chapter 6.3
+Week 3: Chapter 6.4-6.6
+Week 4: Chapter 8.1-8.3
+
+Prediction and Control with Function Approximation:
+Week 1: Chapter 9.1-9.4
+Week 2: Chapter 9.4-9.5, 9.7
+Week 3: Chapter 10-10.1, 10.3
+Week 4: Chapter 13

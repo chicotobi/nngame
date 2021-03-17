@@ -1,0 +1,15 @@
+Metadata-Version: 2.1
+Name: rlbase-chicotobi
+Version: 0.0.2
+Summary: Reinforcement learning for BartoSutton2018
+Home-page: UNKNOWN
+Author: Tobias Hofmann
+Author-email: tobiasalexanderhofmann@googlemail.com
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
