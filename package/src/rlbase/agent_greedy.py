@@ -43,7 +43,7 @@ class EpsGreedyAgent(BaseAgent):
         if np.random.rand() > self.epsilon:
           if self.ucb_c:
             self.t += 1
-            current_action = argmax(self.q_values + self.ucb_c * (math.log(self.t)/self.action_count)**.5 )
+            current_action = argmax(self.q_values + self.ucb_c * (math.log(self.t) / np.maximum(1,self.action_count))**.5 )
           else:
             current_action = argmax(self.q_values)            
         else:

@@ -16,6 +16,8 @@ class BanditEnvironment(BaseEnvironment):
         self.arms = np.random.randn(self.N)
         self.reward_obs_term = (0, self.states[0], False)
         self.random = env_info.get("random",False)
+        if env_info.get("offset"):
+          self.arms += env_info.get("offset")
 
     def env_start(self):
         return self.reward_obs_term[1]
