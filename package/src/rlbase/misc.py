@@ -19,21 +19,21 @@ def softmax(v):
 
 # For all s:
 # (1 - Sum(a,s_prime,r) pi(a|s) * p(s_prime,r|s,a) * gamma ) * v_pi(s) = Sum(a,s_prime,r) pi(a|s) * p(s_prime,r|s,a) * r
-# def evaluate_policy_linear_system(env,pi,gamma=1,terminal_states=[]):
-#   nstates = len(env.states)
-#   A = np.zeros((nstates,nstates))
-#   b = np.zeros((nstates,1))
-#   for (i,s) in enumerate(env.states):
-#     A[i,i] = 1
-#     for (j,s_prime) in enumerate(env.states):
-#       for a in env.actions:
-#         for r in env.rewards:
-#           b[i] += pi(a,s) * env.state_transition(s_prime,r,s,a) * r
-#           A[i,j] -= pi(a,s) * env.state_transition(s_prime,r,s,a) * gamma       
-#   idx_states_plus = [i for (i,s) in enumerate(env.states) if s not in terminal_states]
-#   value = np.zeros((nstates,1))
-#   value[idx_states_plus] = np.linalg.solve(A[np.ix_(idx_states_plus,idx_states_plus)],b[idx_states_plus])
-#   return value
+def evaluate_policy_linear_system(env,pi,gamma=1):
+  nstates = len(env.states)
+  A = np.zeros((nstates,nstates))
+  b = np.zeros((nstates,1))
+  for (i,s) in enumerate(env.states):
+    A[i,i] = 1
+    for (j,s_prime) in enumerate(env.states):
+      for a in env.actions:
+        for r in env.rewards:
+          b[i] += pi.prob(a,s) * env.state_transition(s_prime,r,s,a) * r
+          A[i,j] -= pi.prob(a,s) * env.state_transition(s_prime,r,s,a) * gamma       
+  idx_states_plus = [i for (i,s) in enumerate(env.states) if s not in env.terminal_states]
+  value = np.zeros((nstates,1))
+  value[idx_states_plus] = np.linalg.solve(A[np.ix_(idx_states_plus,idx_states_plus)],b[idx_states_plus])
+  return value
   
 def evaluate_policy_iterative(env,pi,gamma=1,tol=1e-10):
   v = {s:0 for s in env.states}
@@ -73,14 +73,14 @@ def improve_policy_from_value_function(env,values,gamma=1,tol=1e-5):
     improved_policy[s] = improved_actions
   return policy.BestActionPolicy(env.states,env.actions,improved_policy)
 
-# def get_action_value_function(states,rewards,state_transition,gamma,value_function):
-#   def q(s,a):
-#     val = 0
-#     for s_prime in states:
-#       for r in rewards:
-#         val += state_transition(s_prime, r, s, a) * (r + gamma * value_function[s_prime])
-#     return val[0]
-#   return q
+def get_action_value_function(env,v,gamma=1):
+  def q(s,a):
+    val = 0
+    for s_prime in env.states:
+      for r in env.rewards:
+        val += env.state_transition(s_prime, r, s, a) * (r + gamma * v[s_prime])
+    return val
+  return q
 
 # def evaluate_policy_linear_system_two_arg(states,actions,state_transition,policy,gamma=1,terminal_states=[]):
 #   idx = {j:i for (i,j) in enumerate(states)}

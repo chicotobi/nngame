@@ -38,13 +38,11 @@ class GradientAgent(BaseAgent):
         self.t += 1
         if self.baseline:
           self.average_reward += (reward - self.average_reward) / self.t
-      
-        for a in range(self.num_actions):
-          if a == self.last_action:
-            self.h_values[a] += self.step_size * (reward - self.average_reward) * (1-pi[a])
-          else:
-            self.h_values[a] -= self.step_size * (reward - self.average_reward) * pi[a]
-            
+    
+        one_hot = np.zeros(self.num_actions)
+        one_hot[self.last_action] = 1
+        self.h_values += self.step_size * (reward - self.average_reward) * (one_hot-pi)
+          
         current_action = np.random.choice(list(range(self.num_actions)),p=list(pi))
     
         self.last_action = current_action        
