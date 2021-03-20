@@ -1,5 +1,23 @@
 import numpy as np
 
+def sample(v):
+  return v[np.random.choice(len(v))]
+
+def argmax_dct(dct):
+  v=list(dct.values())
+  return list(dct.keys())[v.index(max(v))]    
+
+def all_argmax(dct):
+  vmax = -np.Infinity
+  ans = []
+  for (k,v) in dct.items():
+    if v == vmax:
+      ans += [k]
+    if v > vmax:
+      ans = [k]
+      vmax = v
+  return ans
+
 def argmax(v):
     top_value = float("-inf")
     ties = []    
@@ -33,7 +51,7 @@ def evaluate_policy_linear_system(env,pi,gamma=1):
   idx_states_plus = [i for (i,s) in enumerate(env.states) if s not in env.terminal_states]
   value = np.zeros((nstates,1))
   value[idx_states_plus] = np.linalg.solve(A[np.ix_(idx_states_plus,idx_states_plus)],b[idx_states_plus])
-  return value
+  return dict(zip(env.states,value))
   
 def evaluate_policy_iterative(env,pi,gamma=1,tol=1e-10):
   v = {s:0 for s in env.states}
@@ -82,22 +100,22 @@ def get_action_value_function(env,v,gamma=1):
     return val
   return q
 
-# def evaluate_policy_linear_system_two_arg(states,actions,state_transition,policy,gamma=1,terminal_states=[]):
-#   idx = {j:i for (i,j) in enumerate(states)}
-#   nstates = len(states)
-#   A = np.zeros((nstates,nstates))
-#   b = np.zeros((nstates,1))
-#   for s in states:
-#     A[idx[s],idx[s]] = 1
-#     for a in actions:
-#       for (s_prime, r, p) in state_transition(s,a):
-#         b[idx[s]] += policy(a,s) * p * r
-#         A[idx[s],idx[s_prime]] -= policy(a,s) * p * gamma
+def evaluate_policy_linear_system_two_args(env,pi,gamma=1):
+  idx = {j:i for (i,j) in enumerate(env.states)}
+  nstates = len(env.states)
+  A = np.zeros((nstates,nstates))
+  b = np.zeros((nstates,1))
+  for s in env.states:
+    A[idx[s],idx[s]] = 1
+    for a in env.actions:
+      for (s_prime, r, p) in env.env_state_transition_two_args(s,a):
+        b[idx[s]] += pi.prob(a,s) * p * r
+        A[idx[s],idx[s_prime]] -= pi.prob(a,s) * p * gamma
 
-#   idx_states_plus = [idx[s] for s in states if s not in terminal_states]
-#   value = np.zeros((nstates,1))
-#   value[idx_states_plus] = np.linalg.solve(A[np.ix_(idx_states_plus,idx_states_plus)],b[idx_states_plus])
-#   return value
+  idx_states_plus = [idx[s] for s in env.states if s not in env.terminal_states]
+  value = np.zeros((nstates,1))
+  value[idx_states_plus] = np.linalg.solve(A[np.ix_(idx_states_plus,idx_states_plus)],b[idx_states_plus])
+  return dict(zip(env.states,value))
 
 # def evaluate_policy_iterative_two_args(states,actions,state_transition,policy,gamma=1,tol=1e-10):
 #   idx = {j:i for (i,j) in enumerate(states)}
@@ -119,28 +137,23 @@ def get_action_value_function(env,v,gamma=1):
 #       break
 #   return v, arr_v
 
-# def improve_policy_from_value_function_two_arg(states,actions,state_transition,value_function,gamma=1,tol=1e-10):
-#   idx = {j:i for (i,j) in enumerate(states)}
-#   improved_policy = {}
-#   for (i,s) in enumerate(states):
-#     improved_actions = []
-#     improved_value = - np.Infinity
-#     for a in actions:
-#       v = 0
-#       for (s_prime, r, p) in state_transition(s,a):
-#         v += p * (r + gamma * value_function[idx[s_prime]])
-#       if v > improved_value:
-#         improved_value = v
-#         improved_actions = []
-#       if abs(improved_value-v)<tol:
-#         improved_actions.append(a)
-#     improved_policy[s] = improved_actions
-#   def p(a,s):
-#     if a in improved_policy[s]:
-#       return 1/len(improved_policy[s])
-#     else:
-#       return 0
-#   return p
+def improve_policy_from_value_function_two_args(env,values,gamma=1,tol=1e-10):
+  import policy
+  improved_policy = {}
+  for s in env.states:
+    improved_actions = []
+    improved_value = - np.Infinity
+    for a in env.actions:
+      v = 0
+      for (s_prime, r, p) in env.env_state_transition_two_args(s,a):
+        v += p * (r + gamma * values[s_prime])
+      if v > improved_value:
+        improved_value = v
+        improved_actions = []
+      if abs(improved_value-v)<tol:
+        improved_actions.append(a)
+    improved_policy[s] = improved_actions
+  return policy.BestActionPolicy(env.states,env.actions,improved_policy)
 
 # def get_deterministic_policy_from_policy_function(states,actions,policy):
 #   pol = {s:0 for s in states}
@@ -152,24 +165,22 @@ def get_action_value_function(env,v,gamma=1):
 #         pol[s] = a
 #   return pol
 
-
-# def value_iteration(states,actions,state_transition,gamma=1,tol=1e-10):
-#   idx = {j:i for (i,j) in enumerate(states)}
-#   nstates = len(states)
-#   v = np.zeros((nstates,1))
-#   v_new = np.zeros((nstates,1))
-#   arr_v = []
-#   while True:
-#     arr_v.append(v)
-#     for (i,s) in enumerate(states):
-#       for a in actions:
-#         tmp = 0
-#         for (s_prime, r, p) in state_transition(s,a):
-#           tmp += p * (r + gamma * v[idx[s_prime]])
-#         v_new[i] = max(v_new[i], tmp)
-#     Delta = max(abs(v_new-v))
-#     print(Delta)
-#     v = v_new.copy()
-#     if Delta < tol:
-#       break
-#   return v, arr_v
+def value_iteration_two_args(env,gamma=1,tol=1e-10):
+  v = {s:0 for s in env.states}
+  v_new = v.copy()
+  arr_v = []
+  while True:
+    arr_v.append(v)
+    Delta = 0
+    for s in env.states:
+      v_new[s] = 0
+      for a in env.actions:
+        tmp = 0
+        for (s_prime, r, p) in env.env_state_transition_two_args(s,a):
+          tmp += p * (r + gamma * v[s_prime])
+        v_new[s] = max(v_new[s], tmp)
+      Delta = max(Delta,abs(v_new[s]-v[s]))
+    v = v_new.copy()
+    if Delta < tol:
+      break
+  return v, arr_v
