@@ -1,8 +1,8 @@
-from base_environment import BaseEnvironment
+from environment import BaseEnvironment
 import math
 import numpy.random as npr
 
-class Blackjack(BaseEnvironment):  
+class BlackjackEnvironment(BaseEnvironment):  
   def __init__(self):        
     self.player = range(12,22)
     self.dealer = list(range(2,12))
@@ -31,15 +31,15 @@ class Blackjack(BaseEnvironment):
       if player > 21:
         if c==11:
           if player-10>21:
-            return None,-1
+            return -1, None, True
           else:
-            return (player-10,dealer,usable),0
+            return 0, (player-10,dealer,usable), False
         elif usable:
-          return (player-10,dealer,0),0
+          return 0, (player-10,dealer,0), False
         else:
-          return None,-1
+          return -1, None, True
       else:
-        return (player,dealer,usable),0
+        return 0, (player,dealer,usable), False
   
     # Dealer turn
     aces_dealer = dealer==11
@@ -52,10 +52,10 @@ class Blackjack(BaseEnvironment):
           dealer -= 10
           aces_dealer -= 1
         else:
-          return None,1
+          return 1, None, True
     if dealer>player:
-      return None,-1
+      return -1, None, True
     elif dealer==player:
-      return None,0
+      return 0, None, True
     else:
-      return None,1
+      return 1, None, True

@@ -7,6 +7,7 @@ from __future__ import print_function
 
 from abc import ABCMeta, abstractmethod
 
+import numpy.random as npr
 
 class BaseEnvironment:
     """Implements the environment for an RLGlue environment
@@ -68,3 +69,9 @@ class BaseEnvironment:
         Returns:
             the response (or answer) to the message
         """
+    def get_random_state(self):
+      n_states = len(self.states)
+      return self.states[npr.choice(n_states)]
+    
+    def get_random_initial_state(self):
+      return self.get_random_state()

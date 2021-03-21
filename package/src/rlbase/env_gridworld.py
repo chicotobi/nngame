@@ -174,10 +174,23 @@ class CliffGridworldEnvironment(GridworldEnvironment):
   def __init__(self):
     super().__init__({"sx":12,"sy":4})
     self.rewards = [-1]
-    self.start = (0,0)
-    self.goal = (11,0)
     
-  def step(self,s,a):
+  def env_init(self, env_info={}):    
+    reward = None
+    state = None
+    termination = None
+    self.reward_state_term = (reward, state, termination)
+    
+    self.start = (0,0)
+    self.goal = (self.sy - 1, 0)
+    
+    self.cliff = [(self.grid_h - 1, i) for i in range(1, (self.grid_w - 1))]
+    
+  def env_start(self):
+    self.reward_state_term = (0, self.start, False)
+    return self.reward_state_term
+    
+  def env_step(self,s,a):
     x, y = s
     r = -1
     
@@ -191,11 +204,12 @@ class CliffGridworldEnvironment(GridworldEnvironment):
       y += 1 
       
     if (x,y) == self.goal:
-      return None, r
-    elif 0 < x < 11 and y == 0:
-      return self.start, -100
+      self.reward_state_term = (r, None, True)
+    elif 0 < x < self.sx-1 and y == 0:
+      self.reward_state_term = (-100, self.start, False)
     else:
-      return (x,y), r
+      self.reward_state_term = (r, (x,y), False)
+    return r, (x,y), False
     
   def state_transition(self,s_prime, r, s, a):
     tmp1, tmp2 = self.step(s,a)
