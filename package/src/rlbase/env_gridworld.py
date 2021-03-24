@@ -128,11 +128,16 @@ class GridworldEx41Environment(GridworldEnvironment):
 class WindyGridworldEnvironment(GridworldEnvironment):
   
   def __init__(self):
-    super().__init__({"sx":10,"sy":7})
+    super().__init__()
+    self.env_init({"sx":10,"sy":7})
     self.rewards = [-1]
     self.start = (0,3)
     self.goal = (7,3)
     self.stochastic = False
+    self.valid_actions = {s:self.actions for s in self.states}
+    
+  def get_initial_state(self):
+    return self.start
           
   def env_step(self,s,a):
     x, y = s
@@ -160,9 +165,9 @@ class WindyGridworldEnvironment(GridworldEnvironment):
       y += 1 
       
     if (x,y) == self.goal:
-      return None, r
+      return r, None, True
     else:
-      return (x,y), r
+      return r, (x,y), False
     
   def state_transition(self,s_prime, r, s, a):
     tmp1, tmp2 = self.env_step(s,a)
@@ -172,27 +177,18 @@ class WindyGridworldEnvironment(GridworldEnvironment):
 class CliffGridworldEnvironment(GridworldEnvironment):  
   
   def __init__(self):
-    super().__init__({"sx":12,"sy":4})
+    super().__init__()
+    self.env_init({"sx":12,"sy":4})
     self.rewards = [-1]
-    
-  def env_init(self, env_info={}):    
-    reward = None
-    state = None
-    termination = None
-    self.reward_state_term = (reward, state, termination)
-    
     self.start = (0,0)
     self.goal = (self.sy - 1, 0)
-    
     self.cliff = [(self.grid_h - 1, i) for i in range(1, (self.grid_w - 1))]
     
-  def env_start(self):
-    self.reward_state_term = (0, self.start, False)
-    return self.reward_state_term
-    
+  def get_initial_state(self):
+    return self.start
+      
   def env_step(self,s,a):
     x, y = s
-    r = -1
     
     if "left" in a and x > 0:
       x -= 1
@@ -204,12 +200,10 @@ class CliffGridworldEnvironment(GridworldEnvironment):
       y += 1 
       
     if (x,y) == self.goal:
-      self.reward_state_term = (r, None, True)
+      return -1, None, True
     elif 0 < x < self.sx-1 and y == 0:
-      self.reward_state_term = (-100, self.start, False)
-    else:
-      self.reward_state_term = (r, (x,y), False)
-    return r, (x,y), False
+      return -100, self.start, False
+    return -1, (x,y), False
     
   def state_transition(self,s_prime, r, s, a):
     tmp1, tmp2 = self.step(s,a)
