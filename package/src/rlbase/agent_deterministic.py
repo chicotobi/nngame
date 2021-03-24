@@ -3,7 +3,7 @@ from agent import BaseAgent
 class DeterministicAgent(BaseAgent):
 
     def agent_init(self, agent_info={}):
-        self.pi = agent_info["pi"]
+        self.pi = agent_info["pi"]  
 
     def agent_start(self, observation):
         return self.pi.get(observation)
