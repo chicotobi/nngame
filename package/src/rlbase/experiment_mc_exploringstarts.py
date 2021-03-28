@@ -1,25 +1,24 @@
 from experiment import BaseExperiment
-import misc
-import tqdm
+import misc, tqdm
 
 class MC_ExploringStartsExperiment(BaseExperiment):
   
-  def experiment_init(self, exp_init={}):
+  def __init__(self, **kwargs):
+    super().__init__(**kwargs)    
     self.n_visits = {s:{a:0 for a in self.env.actions} for s in self.env.states}
     self.Q = {s:{a:0 for a in self.env.actions} for s in self.env.states}
-    self.n_episodes = int(exp_init.get("n_episodes"))
-    self.gamma = exp_init.get("gamma", 1)
     
   def episode(self):
-    s = self.env.get_random_initial_state()
-    a = self.agent.agent_start(s)
+    s = self.env.get_initial_state()
+    a = self.agent.start(s)
     ep = []
     while True: 
-      r, s_prime, terminal = self.env.env_step(s,a)
+      r, s_prime, terminal = self.env.step(s,a)
       ep.append((s,a,r))
       if terminal:
+        self.agent.end(r)
         break
-      a = self.agent.agent_step(r, s_prime)
+      a = self.agent.step(r,s_prime)
       s = s_prime
     return ep  
     
@@ -33,7 +32,5 @@ class MC_ExploringStartsExperiment(BaseExperiment):
         if (s,a) not in set_sa[idx+1:]:
           self.n_visits[s][a] += 1
           self.Q[s][a] += 1. / self.n_visits[s][a] * (G - self.Q[s][a])
-          a0 = misc.argmax_dct(self.Q[s])
+          a0 = misc.argmax_unique(self.Q[s])
           self.agent.pi.update(s,a0)
-          #if self.n_visits[s][a]%1000==0:
-            #print("s",s," n_visits[s][0]",self.n_visits[s][0]," n_visits[s][1]",self.n_visits[s][1]," Q[s][0]",self.Q[s][0]," Q[s][1]",self.Q[s][1])

@@ -3,17 +3,15 @@ import math
 import numpy.random as npr
 
 class BlackjackEnvironment(BaseEnvironment):  
-  def __init__(self):        
+  def __init__(self,**kwargs):        
     self.player = range(12,22)
     self.dealer = list(range(2,12))
     usable = [0,1]    
     self.states = [(a,b,c) for a in self.player for b in self.dealer for c in usable]    
     self.actions = [0,1]
-    self.type_random_initial_state = 1
-    
-  def env_init(self):
-    pass
-  
+    self.type_random_initial_state = 1  
+    self.set_all_actions_valid()
+      
   def get_player_dealer(self):
     return self.player, self.dealer
        
@@ -21,7 +19,7 @@ class BlackjackEnvironment(BaseEnvironment):
     c = min(10,math.ceil(npr.random()*13))
     return c+(c==1)*10
  
-  def env_step(self,s,a):
+  def step(self,s,a):
     player, dealer, usable = s
     
     # Player turn

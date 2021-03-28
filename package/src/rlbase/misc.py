@@ -3,11 +3,7 @@ import numpy as np
 def sample(v):
   return v[np.random.choice(len(v))]
 
-def argmax_dct(dct):
-  v=list(dct.values())
-  return list(dct.keys())[v.index(max(v))]    
-
-def all_argmax(dct):
+def argmax(dct):
   vmax = -np.Infinity
   ans = []
   for (k,v) in dct.items():
@@ -18,16 +14,8 @@ def all_argmax(dct):
       vmax = v
   return ans
 
-def argmax(v):
-    top_value = float("-inf")
-    ties = []    
-    for i in range(len(v)):
-        if v[i] > top_value:
-            ties = [i]
-            top_value = v[i]
-        elif v[i] == top_value:
-            ties.append(i)
-    return np.random.choice(ties)
+def argmax_unique(dct):
+  return sample(argmax(dct))
 
 def softmax(v):
   vmax = np.max(v)    
@@ -83,13 +71,14 @@ def improve_policy_from_value_function(env,values,gamma=1,tol=1e-5):
       for s_prime in env.states:
         for r in env.rewards:
           v += env.state_transition(s_prime, r, s, a) * (r + gamma * values[s_prime])
-      if v > improved_value:
-        improved_value = v
-        improved_actions = []
-      if abs(improved_value-v)<tol:
-        improved_actions.append(a)
+      if v >= improved_value-tol:
+        if abs(improved_value-v)<tol:
+          improved_actions.append(a)
+        else:
+          improved_value = v          
+          improved_actions = [a]
     improved_policy[s] = improved_actions
-  return policy.BestActionPolicy(env.states,env.actions,improved_policy)
+  return policy.BestActionPolicy(env=env,best_actions=improved_policy)
 
 def get_action_value_function(env,v,gamma=1):
   def q(s,a):
@@ -108,7 +97,7 @@ def evaluate_policy_linear_system_two_args(env,pi,gamma=1):
   for s in env.states:
     A[idx[s],idx[s]] = 1
     for a in env.actions:
-      for (s_prime, r, p) in env.env_state_transition_two_args(s,a):
+      for (s_prime, r, p) in env.state_transition_two_args(s,a):
         b[idx[s]] += pi.prob(a,s) * p * r
         A[idx[s],idx[s_prime]] -= pi.prob(a,s) * p * gamma
 
@@ -145,7 +134,7 @@ def improve_policy_from_value_function_two_args(env,values,gamma=1,tol=1e-10):
     improved_value = - np.Infinity
     for a in env.actions:
       v = 0
-      for (s_prime, r, p) in env.env_state_transition_two_args(s,a):
+      for (s_prime, r, p) in env.state_transition_two_args(s,a):
         v += p * (r + gamma * values[s_prime])
       if v > improved_value:
         improved_value = v
@@ -153,7 +142,7 @@ def improve_policy_from_value_function_two_args(env,values,gamma=1,tol=1e-10):
       if abs(improved_value-v)<tol:
         improved_actions.append(a)
     improved_policy[s] = improved_actions
-  return policy.BestActionPolicy(env.states,env.actions,improved_policy)
+  return policy.BestActionPolicy(env=env,best_actions=improved_policy)
 
 # def get_deterministic_policy_from_policy_function(states,actions,policy):
 #   pol = {s:0 for s in states}
@@ -176,7 +165,7 @@ def value_iteration_two_args(env,gamma=1,tol=1e-10):
       v_new[s] = 0
       for a in env.actions:
         tmp = 0
-        for (s_prime, r, p) in env.env_state_transition_two_args(s,a):
+        for (s_prime, r, p) in env.state_transition_two_args(s,a):
           tmp += p * (r + gamma * v[s_prime])
         v_new[s] = max(v_new[s], tmp)
       Delta = max(Delta,abs(v_new[s]-v[s]))

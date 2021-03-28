@@ -5,74 +5,80 @@ import tabulate as tb
 
 class GridworldEnvironment(BaseEnvironment):
 
-    def __init__(self):
-        self.terminal_states = None
-        pass
-
-    def env_init(self, env_info):
-        self.sx = env_info["sx"]
-        self.sy = env_info["sy"]
-        self.rewards = [-1,0]
-        self.states = [(x,y) for x in range(self.sx) for y in range(self.sy)]    
-        self.actions = ["up","left","down","right"]
-        
-    def add_diagonal(self):
-      self.actions += ["upleft","upright","downleft","downright"]
-      
-    def add_stay(self):
-      self.actions += ["stay"]
-    
-    def pretty_print(self,v):
-      print(tb.tabulate(np.round(v,1)))
-      print()
-    
-    def reshape(self,field):        
-      v = np.zeros((self.sx,self.sy))
-      for i in range(self.sx):
-        for j in range(self.sy):
-          v[i,self.sy-j-1] = field[(i,j)]
-      return v
-
-
-class GridworldEx35Environment(GridworldEnvironment):
-  state_A = (1,4)
-  state_A_prime = (1,0)
-  reward_A = 10
-  state_B = (3,4)
-  state_B_prime = (3,2)
-  reward_B = 5
-  
-  def __init__(self):
+  def __init__(self, **kwargs):
     super().__init__()
-    self.env_init({"sx":5,"sy":5})
-    self.rewards += [5,10]
+    self.sx = kwargs.get("sx")
+    self.sy = kwargs.get("sy")
+    self.rewards = [-1,0]
+    self.states = [(x,y) for x in range(self.sx) for y in range(self.sy)]    
+    self.actions = ["up","left","down","right"]
+    self.set_all_actions_valid()
+      
+  def add_diagonal(self):
+    self.actions += ["upleft","upright","downleft","downright"]
+    
+  def add_stay(self):
+    self.actions += ["stay"]
+  
+  def pretty_print(self,v):
+    print(tb.tabulate(np.round(v,1)))
+    print()
+  
+  def reshape(self,field):        
+    v = np.zeros((self.sx,self.sy))
+    for i in range(self.sx):
+      for j in range(self.sy):
+        v[i,self.sy-j-1] = field[(i,j)]
+    return v
+  
+  def get_initial_state(self):
+    return self.start
   
   def state_transition(self,s_prime, r, s, a):
-    tmp1, tmp2 = self.env_step(s,a)
-    return tmp1 == s_prime and tmp2 == r
+    tmp1, tmp2, tmp3 = self.step(s,a)
+    return tmp1 == r and tmp2 == s_prime
+
+class GridworldEx35Environment(GridworldEnvironment):
+
+  def __init__(self):
+    super().__init__(sx=5,sy=5)
+    self.rewards += [5,10]
     
-  def env_step(self,s,a):
-    x,y = s 
-    if s == self.state_A:
-      return self.state_A_prime, self.reward_A
-    if s == self.state_B:
-      return self.state_B_prime, self.reward_B
-    if x == 0 and a=="left":
-      return s, -1
-    if x == self.sx - 1 and a=="right":
-      return s, -1
-    if y == 0 and a=="down":
-      return s, -1
-    if y == self.sy - 1 and a=="up":
-      return s, -1
-    if a=="right":
-      return (x + 1, y), 0
-    if a=="left":
-      return (x - 1, y), 0
-    if a=="down":
-      return (x, y - 1), 0
-    if a=="up":
-      return (x, y + 1), 0
+  def step(self,s,a):
+    state_A = (1,4)
+    state_A_prime = (1,0)
+    reward_A = 10
+    state_B = (3,4)
+    state_B_prime = (3,2)
+    reward_B = 5    
+    
+    x, y = s 
+    r = 0
+    if s == state_A:
+      return reward_A, state_A_prime, False
+    if s == state_B:
+      return reward_B, state_B_prime, False
+    if "left" in a:
+      if x == 0:
+        r = -1
+      else:
+        x -= 1
+    if "right" in a:
+      if x == self.sx - 1:
+        r = -1
+      else:
+        x += 1
+    if "down" in a:
+      if y == 0:
+        r = -1
+      else:
+        y -= 1
+    if "up" in a:
+      if y == self.sy - 1:
+        r = -1
+      else:
+        y += 1 
+    return r, (x,y), False
     
   def plot(self,f):
     v = np.zeros((self.sx,self.sy))
@@ -93,53 +99,47 @@ class GridworldEx35Environment(GridworldEnvironment):
 class GridworldEx41Environment(GridworldEnvironment):
   
   def __init__(self):
-    super().__init__()
-    self.terminal_states = (0,0)
-    self.env_init({"sx":4,"sy":4})
+    super().__init__(sx=4,sy=4)
     self.rewards = [-1]
+    self.terminal_states = (0,0)
   
-  def state_transition(self,s_prime, r, s, a):
-    tmp1, tmp2 = self.env_step(s,a)
-    return tmp1 == s_prime and tmp2 == r
-  
-  def env_step(self, s, a):
-    x,y = s
+  def step(self, s, a):
+    x, y = s
+    r = -1
     if (x,y)==(0,3):
-      return s, 0
+      return 0, None, True
     if (x,y)==(3,0):
-      return s, 0
-    if x == 0 and a=="left":
-      return s, -1
-    if x == self.sx - 1 and a=="right":
-      return s, -1  
-    if y == 0 and a=="down":
-      return s, -1   
-    if y == self.sy - 1 and a=="up":
-      return s, -1
-    if a=="right":
-      return (x + 1, y), -1
-    if a=="left":
-      return (x - 1, y), -1
-    if a=="down":
-      return (x, y - 1), -1
-    if a=="up":
-      return (x, y + 1), -1
+      return 0, None, True
+    if "left" in a and x > 0:
+      x -= 1
+    if "right" in a and x < self.sx - 1:
+      x += 1
+    if "down" in a and y > 0:
+      y -= 1
+    if "up" in a and y < self.sy - 1:
+      y += 1 
+    return r, (x,y), False
+  
+  def plot_bestaction_policy(self,p):        
+    tmp = np.ndarray((self.sx,self.sy), dtype = 'object')
+    for s in self.states:  
+      tmp[s[0],s[1]] = ""
+      for a in self.actions:
+        if p.prob(a,s):
+          tmp[s[0],s[1]] += a[0]
+    print(tb.tabulate(np.flipud(tmp.transpose())))
       
 class WindyGridworldEnvironment(GridworldEnvironment):
-  
-  def __init__(self):
-    super().__init__()
-    self.env_init({"sx":10,"sy":7})
-    self.rewards = [-1]
-    self.start = (0,3)
-    self.goal = (7,3)
-    self.stochastic = False
-    self.valid_actions = {s:self.actions for s in self.states}
     
-  def get_initial_state(self):
-    return self.start
-          
-  def env_step(self,s,a):
+  def __init__(self,**kwargs):
+    super().__init__(sx=10,sy=7)
+    self.rewards = [-1]
+    self.stochastic = kwargs.get("stochastic",False)
+    self.valid_actions = {s:self.actions for s in self.states}
+    self.start = kwargs.get("start",(0,3))
+    self.terminal_states = [kwargs.get("goal",(7,3))]
+              
+  def step(self,s,a):
     x, y = s
     r = -1
     
@@ -164,30 +164,21 @@ class WindyGridworldEnvironment(GridworldEnvironment):
     if "up" in a and y < self.sy - 1:
       y += 1 
       
-    if (x,y) == self.goal:
+    if (x,y) in self.terminal_states:
       return r, None, True
     else:
       return r, (x,y), False
-    
-  def state_transition(self,s_prime, r, s, a):
-    tmp1, tmp2 = self.env_step(s,a)
-    return tmp1 == s_prime and tmp2 == r
-  
   
 class CliffGridworldEnvironment(GridworldEnvironment):  
   
   def __init__(self):
-    super().__init__()
-    self.env_init({"sx":12,"sy":4})
+    super().__init__(sx=12,sy=4)
     self.rewards = [-1]
     self.start = (0,0)
     self.goal = (self.sy - 1, 0)
     self.cliff = [(self.grid_h - 1, i) for i in range(1, (self.grid_w - 1))]
-    
-  def get_initial_state(self):
-    return self.start
       
-  def env_step(self,s,a):
+  def step(self,s,a):
     x, y = s
     
     if "left" in a and x > 0:
@@ -204,7 +195,3 @@ class CliffGridworldEnvironment(GridworldEnvironment):
     elif 0 < x < self.sx-1 and y == 0:
       return -100, self.start, False
     return -1, (x,y), False
-    
-  def state_transition(self,s_prime, r, s, a):
-    tmp1, tmp2 = self.step(s,a)
-    return tmp1 == s_prime and tmp2 == r

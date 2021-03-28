@@ -1,18 +1,15 @@
 from environment import BaseEnvironment
 
 class GamblerEnvironment(BaseEnvironment):
-    def __init__(self):
-      pass
-
-    def env_init(self, env_info={}):
-      self.n = env_info.get("n",100)
-      self.p_h = env_info.get("p_h",0.4)
-      
+    def __init__(self,**kwargs):
+      self.n = kwargs.get("n",100)
+      self.p_h = kwargs.get("p_h",0.4)      
       self.states = list(range(self.n+1))            
       self.terminal_states = [0,self.n]     
       self.actions = list(range(self.n//2+1))      
+      self.set_all_actions_valid() # TODO This is wrong, but difficult
     
-    def env_state_transition_two_args(self, s, a):
+    def state_transition_two_args(self, s, a):
       
       if s in self.terminal_states:
         return [(s,0,1)]      

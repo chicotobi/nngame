@@ -17,12 +17,9 @@ class RacetrackEnvironment(BaseEnvironment):
   min_ay = -1
   max_ay = 1  
   
-  def __init__(self):        
-    pass
-  
-  def env_init(self, env_info={}):
+  def __init__(self,**kwargs):        
     from pathlib import Path
-    track_path = env_info.get("track_path",str(Path.home())+"/nngame/package/src/rlbase/chap5.7_exercise5.12_racetrack_1")
+    track_path = kwargs.get("track_path",str(Path.home())+"/nngame/package/src/rlbase/chap5.7_exercise5.12_racetrack_1")
     
     self.field = np.array([[int(i) for i in l] for l in open(track_path).read().splitlines()])
     self.field = np.flip(self.field,axis=0)
@@ -52,14 +49,13 @@ class RacetrackEnvironment(BaseEnvironment):
         if self.min_vx <= vx+ax <= self.max_vx and self.min_vy <= vy+ay <= self.max_vy:
           self.valid_actions[s] += [a]
     
-  def get_random_initial_state(self):
-      x,y = misc.sample(self.start_positions)
-      vx = 0
-      vy = 0
-      return (x, y, vx, vy)
+  def get_initial_state(self):
+    x,y = misc.sample(self.start_positions)
+    vx = 0
+    vy = 0
+    return (x, y, vx, vy)
     
-    
-  def env_step(self, s, a):
+  def step(self, s, a):
     x,y,vx,vy = s
     ax, ay = a
     
@@ -76,6 +72,6 @@ class RacetrackEnvironment(BaseEnvironment):
     # Car still on track ?
     on_track = 0 < x < self.sx and 0 < y < self.sy and self.field[x,y] != 0
     if not on_track:
-      x, y, vx, vy = self.get_random_initial_state()
+      x, y, vx, vy = self.get_initial_state()
       
     return -1, (x,y,vx,vy), False

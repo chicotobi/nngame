@@ -1,58 +1,38 @@
 from agent import BaseAgent
-from misc import argmax
 
 import numpy as np
-import math
 from misc import softmax
 
 class GradientAgent(BaseAgent):
-    def __init__(self):
-        self.last_action = None
-        self.num_actions = None
-        self.h_values = None
-        self.step_size = None
-        self.epsilon = None
-        self.initial_value = None
-        self.action_count = None
+  def __init__(self,**kwargs):
+    super().__init__(**kwargs)
+    self.alpha = kwargs.get("alpha")
+    self.baseline = kwargs.get("baseline",0)
+    self.average_reward = 0
 
-    def agent_init(self, agent_info={}):
-        self.num_actions = agent_info["num_actions"]
-        self.initial_value = agent_info.get("initial_value", 0.0)
-        self.h_values = np.ones(self.num_actions) * self.initial_value
-        self.step_size = agent_info["step_size"]
-        self.epsilon = agent_info.get("epsilon",0)
-        self.last_action = 0
-        self.action_count = np.zeros(self.num_actions)
-        self.baseline = agent_info.get("baseline")
+  def start(self, s):
+    self.t = 0
+    self.last_state = s
+    self.last_action = self.pi.get(s)
+    return self.last_action
 
-    def agent_start(self, observation):
-        self.last_action = np.random.choice(self.num_actions)
-        self.t = 0
-        self.average_reward = 0
-        return self.last_action
-
-    def agent_step(self, reward, observation):
+  def step(self, r, s):
+    self.t += 1
+  
+    if self.alpha:
+      stepsize = self.alpha
+    else:
+      stepsize = 1 / self.nq[self.last_state][self.last_action]
+    if self.baseline:
+      self.average_reward += (r - self.average_reward) / self.t
+  
+    one_hot = np.zeros(self.pi.na)
+    one_hot[self.last_action] = 1
       
-        pi = softmax(self.h_values)
-        
-        self.t += 1
-        if self.baseline:
-          self.average_reward += (reward - self.average_reward) / self.t
+    self.pi.h[self.last_state] += stepsize * (r - self.average_reward) * ( one_hot - softmax(self.pi.h[self.last_state]))
     
-        one_hot = np.zeros(self.num_actions)
-        one_hot[self.last_action] = 1
-        self.h_values += self.step_size * (reward - self.average_reward) * (one_hot-pi)
-          
-        current_action = np.random.choice(list(range(self.num_actions)),p=list(pi))
+    self.pi.update(self.last_state)
     
-        self.last_action = current_action        
-        return current_action
-
-    def agent_end(self, reward):
-        pass
-
-    def agent_cleanup(self):
-        pass
-
-    def agent_message(self, message):
-        pass
+    self.last_state = s        
+    self.last_action = self.pi.get(s)
+    return self.last_action

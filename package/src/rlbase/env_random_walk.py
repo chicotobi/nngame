@@ -4,19 +4,17 @@ import numpy as np
 
 class RandomWalkEnvironment(BaseEnvironment):
 
-    def __init__(self):
-        pass
-
-    def env_init(self, env_info={}):
-      self.n = env_info.get("nmax",5  )
-      self.p = env_info.get("p",.5)
+    def __init__(self,**kwargs):
+      self.n = kwargs.get("nmax",5  )
+      self.p = kwargs.get("p",.5)
       
       self.states = list(range(self.n+2))
       self.terminal_states = [0,self.n+1]
       self.actions = [0]
       self.rewards = [0,1]
+      self.set_all_actions_valid()
 
-    def env_step(self,s,a):
+    def step(self,s,a):
       if np.random.rand() > self.p:
         s += 1
       else:

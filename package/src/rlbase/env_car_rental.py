@@ -20,19 +20,17 @@ def mypois(n,l,maxn):
     
 class CarRentalEnvironment(BaseEnvironment):
 
-    def __init__(self):
-        pass
-
-    def env_init(self, env_info={}):
-      self.nmax = env_info.get("nmax",20)
-      self.max_move = env_info.get("max_move",5)
-      self.max_return = env_info.get("max_return",3)
+    def __init__(self,**kwargs):
+      self.nmax = kwargs.get("nmax",20)
+      self.max_move = kwargs.get("max_move",5)
+      self.max_return = kwargs.get("max_return",3)
       
       self.states = [(i,j) for i in range(self.nmax+1) for j in range(self.nmax+1)]
       self.terminal_states = []
       
       # Number of cars moved from first to second location
       self.actions = list(range(-self.max_move,self.max_move+1))
+      self.set_all_actions_valid() # TODO This is wrong, but difficult
       
     def reshape(self,field):     
       v = np.zeros((self.nmax,self.nmax))
@@ -42,7 +40,7 @@ class CarRentalEnvironment(BaseEnvironment):
       return v
 
     # This function returns a list of s_prime and corresponding probabilities
-    def env_state_transition_two_args(self, s, a):
+    def state_transition_two_args(self, s, a):
     
       n_first = s[0]
       n_second = s[1]
