@@ -1,5 +1,7 @@
-import misc, tqdm
-from policy import EpsGreedy
+import tqdm
+
+import misc
+import policy
 
 class BaseExperiment:
     def __init__(self, **kwargs):
@@ -104,7 +106,7 @@ class MC_OffPolicyExperiment(BaseExperiment):
     
   def train(self):
     for i in tqdm.tqdm(range(self.n_episodes)): 
-      self.b = EpsGreedy(env=self.env,eps=self.eps,det_policy=self.agent.pi)
+      self.b = policy.EpsGreedy(env=self.env,eps=self.eps,det_policy=self.agent.pi)
       ep = self.episode()
       if self.callback:
         self.callback(i,ep)
