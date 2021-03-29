@@ -81,7 +81,6 @@ class MC_ExploringStartsExperiment(BaseExperiment):
           self.agent.pi.update(s,a0)
 
 class MC_OffPolicyExperiment(BaseExperiment):
-  
   def __init__(self, **kwargs):
     super().__init__(**kwargs)
     self.n_visits = {s:{a:0 for a in self.env.valid_actions[s]} for s in self.env.states}
