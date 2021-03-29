@@ -135,9 +135,9 @@ class WindyGridworldEnvironment(GridworldEnvironment):
     super().__init__(sx=10,sy=7)
     self.rewards = [-1]
     self.stochastic = kwargs.get("stochastic",False)
-    self.valid_actions = {s:self.actions for s in self.states}
     self.start = kwargs.get("start",(0,3))
     self.terminal_states = [kwargs.get("goal",(7,3))]
+    self.set_all_actions_valid()
               
   def step(self,s,a):
     x, y = s
@@ -175,8 +175,9 @@ class CliffGridworldEnvironment(GridworldEnvironment):
     super().__init__(sx=12,sy=4)
     self.rewards = [-1]
     self.start = (0,0)
-    self.goal = (self.sy - 1, 0)
-    self.cliff = [(self.grid_h - 1, i) for i in range(1, (self.grid_w - 1))]
+    self.terminal_states = [(self.sy - 1, 0)]
+    self.cliff = [(self.sx - 1, i) for i in range(1, (self.sy - 1))]
+    self.set_all_actions_valid()
       
   def step(self,s,a):
     x, y = s
@@ -190,7 +191,7 @@ class CliffGridworldEnvironment(GridworldEnvironment):
     if "up" in a and y < self.sy - 1:
       y += 1 
       
-    if (x,y) == self.goal:
+    if (x,y) in self.terminal_states:
       return -1, None, True
     elif 0 < x < self.sx-1 and y == 0:
       return -100, self.start, False

@@ -1,4 +1,4 @@
-from misc import argmax_dct
+import misc
 
 from agent import BaseAgent
 
@@ -14,10 +14,10 @@ class QlearningAgent(BaseAgent):
 
   def step(self, r, s):
     a = self.pi.get(s)
-    a1 = argmax_dct(self.q[self.s])
+    a1 = misc.argmax_unique(self.q[s])
     self.q[self.last_state][self.last_action] += self.alpha * (r + self.gamma * self.q[s][a1] - self.q[self.last_state][self.last_action])
 
-    a0 = argmax_dct(self.q[self.last_state])
+    a0 = misc.argmax_unique(self.q[self.last_state])
     self.pi.update(self.last_state,a0)
 
     self.last_state = s
@@ -27,5 +27,5 @@ class QlearningAgent(BaseAgent):
   def end(self, r):
     self.q[self.last_state][self.last_action] += self.alpha * (r - self.q[self.last_state][self.last_action])
 
-    a0 = argmax_dct(self.q[self.last_state])
+    a0 = misc.argmax_unique(self.q[self.last_state])
     self.pi.update(self.last_state,a0)
