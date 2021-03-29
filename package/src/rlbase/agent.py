@@ -1,7 +1,7 @@
 import math
 import numpy as np
 
-import misc
+import rlbase.misc as misc
 
 class BaseAgent:
   def __init__(self,**kwargs):

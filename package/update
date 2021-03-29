@@ -1,0 +1,5 @@
+#!/bin/bash
+rm -rf dist/rlbase*
+python -m build
+pip uninstall -y rlbase-chicotobi
+pip install dist/*.tar.gz

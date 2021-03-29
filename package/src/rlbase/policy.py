@@ -1,6 +1,7 @@
-import misc
 import numpy as np
 import numpy.random as npr
+
+import rlbase.misc as misc
 
 def transform_Q_to_BestAction(Q):
   return {s:misc.all_argmax(Q[s]) for s in Q.keys()}

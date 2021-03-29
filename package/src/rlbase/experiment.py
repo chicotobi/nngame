@@ -1,7 +1,7 @@
 import tqdm
 
-import misc
-import policy
+import rlbase.misc as misc
+import rlbase.policy as policy
 
 class BaseExperiment:
     def __init__(self, **kwargs):

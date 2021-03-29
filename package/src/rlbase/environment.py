@@ -5,7 +5,7 @@ import functools
 import scipy.stats 
 import tabulate as tb
 
-import misc
+import rlbase.misc as misc
 
 class BaseEnvironment:
   states = None
