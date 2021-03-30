@@ -108,6 +108,53 @@ class BlackjackEnvironment(BaseEnvironment):
     else:
       return 1, None, True
     
+  def plot_value_function(self,v):  
+    player, dealer = self.get_player_dealer()
+    arr = np.zeros((len(player),len(dealer),2))
+    for (ix,x) in enumerate(dealer):
+      for (iy,y) in enumerate(player):
+        for j in range(2):
+          if x==11:
+            arr[iy,0,j] = v[(y,x,j)]
+          else:
+            arr[iy,ix+1,j] = v[(y,x,j)]   
+    self.plot_helper(arr)
+    
+  def plot_bestaction_policy(self,pi):
+    player, dealer = self.get_player_dealer()
+    arr = np.zeros((len(player),len(dealer),2))
+    for (ix,x) in enumerate(dealer):
+      for (iy,y) in enumerate(player):
+        for j in range(2):
+          s = (y,x,j)
+          if x==11:
+            arr[iy,0,j] = pi.prob(0,s) > pi.prob(1,s)
+          else:
+            arr[iy,ix+1,j] = pi.prob(0,s) > pi.prob(1,s)
+    self.plot_helper(arr)
+            
+  def plot_helper(self,arr):   
+    import matplotlib.pyplot as plt
+    player, dealer = self.get_player_dealer()
+    vmin = np.min(arr)
+    vmax = np.max(arr)
+    plt.figure() 
+    dealer_label = ["A"]+list(range(2,11))
+    plt.subplot(1,2,1)
+    plt.imshow(arr[:,:,0],origin="lower",vmin=vmin,vmax=vmax)
+    plt.xticks(range(len(dealer_label)),dealer_label)
+    plt.xlabel("Dealer")
+    plt.yticks(range(len(player)),player)
+    plt.ylabel("Player")
+    plt.title("No usable ace")
+    plt.subplot(1,2,2)
+    plt.imshow(arr[:,:,1],origin="lower",vmin=vmin,vmax=vmax)
+    plt.xticks(range(len(dealer_label)),dealer_label)
+    plt.xlabel("Dealer")
+    plt.yticks(range(len(player)),player)
+    plt.ylabel("Player")
+    plt.title("Usable ace")
+    
 # Memoization of the Poisson distribution for acceleration
 @functools.lru_cache(1000000)
 def mypois(n,l,maxn):

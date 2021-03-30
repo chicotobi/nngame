@@ -129,3 +129,12 @@ def value_iteration_two_args(env,gamma=1,tol=1e-10):
     if Delta < tol:
       break
   return v, arr_v
+
+def get_action_value_function(env,v,gamma=1):
+  def q(s,a):
+    val = 0
+    for s_prime in env.states:
+      for r in env.rewards:
+        val += env.state_transition(s_prime, r, s, a) * (r + gamma * v[s_prime])
+    return val
+  return q
