@@ -422,7 +422,7 @@ class CliffGridworldEnvironment(GridworldEnvironment):
     super().__init__(sx=12,sy=4)
     self.rewards = [-1]
     self.start = (0,0)
-    self.terminal_states = [(self.sy - 1, 0)]
+    self.terminal_states = [(self.sx - 1, 0)]
     self.cliff = [(self.sx - 1, i) for i in range(1, (self.sy - 1))]
     self.set_all_actions_valid()
       
@@ -458,16 +458,69 @@ class RacetrackEnvironment(BaseEnvironment):
   min_ay = -1
   max_ay = 1  
   
-  def __init__(self,**kwargs):        
-    from pathlib import Path
-    track_path = kwargs.get("track_path",str(Path.home())+"/nngame/package/src/rlbase/chap5.7_exercise5.12_racetrack_1")
+  def get_track(self,id):
+    if id==0:
+      sx = 17
+      sy = 32
+      track = "\
+00011111111111113\
+00111111111111113\
+00111111111111113\
+01111111111111113\
+11111111111111113\
+11111111111111113\
+11111111110000000\
+11111111100000000\
+11111111100000000\
+11111111100000000\
+11111111100000000\
+11111111100000000\
+11111111100000000\
+11111111100000000\
+01111111100000000\
+01111111100000000\
+01111111100000000\
+01111111100000000\
+01111111100000000\
+01111111100000000\
+01111111100000000\
+01111111100000000\
+00111111100000000\
+00111111100000000\
+00111111100000000\
+00111111100000000\
+00111111100000000\
+00111111100000000\
+00111111100000000\
+00011111100000000\
+00011111100000000\
+00022222200000000"
+    if id==1:
+      sx = 31
+      sy = 13
+      track = "\
+0000000001111111111111000000000\
+0000000111111111111111111111113\
+0000011111111111111111111111113\
+0001111111111111111111111111113\
+0001111111111100000000000000000\
+0001111111111000000000000000000\
+0001111111110000000000000000000\
+0001111111110000000000000000000\
+0001111111100000000000000000000\
+0001111111100000000000000000000\
+0001111111000000000000000000000\
+0001111111000000000000000000000\
+0002222222000000000000000000000"
+    return sx,sy,track
+  
+  def __init__(self,**kwargs):     
     
-    self.field = np.array([[int(i) for i in l] for l in open(track_path).read().splitlines()])
+    self.sx, self.sy, self.field = self.get_track(kwargs.get("track_id",0)) 
+    self.field = np.reshape(np.array([int(i) for i in self.field]),(self.sy,self.sx))
     self.field = np.flip(self.field,axis=0)
     self.field = np.swapaxes(self.field,0,1)
-        
-    self.sx, self.sy = self.field.shape
-    
+
     self.states = []
     self.start_positions = []
     self.final_positions = []

@@ -145,3 +145,31 @@ class QlearningAgent(BaseAgent):
 
     a0 = misc.argmax_unique(self.q[self.last_state])
     self.pi.update(self.last_state,a0)
+    
+class ExpectedSarsaAgent(BaseAgent):
+  def __init__(self,**kwargs):
+    super().__init__(**kwargs)
+    self.alpha = kwargs.get("alpha",0.5)
+
+  def start(self, s):
+    self.last_state = s
+    self.last_action = self.pi.get(s)
+    return self.last_action
+
+  def step(self, r, s):
+    a = self.pi.get(s)
+    exp_val = sum(self.pi.prob(a1,s) * val for (a1,val) in self.q[s].items())
+    self.q[self.last_state][self.last_action] += self.alpha * (r + self.gamma * exp_val - self.q[self.last_state][self.last_action])
+
+    a0 = misc.argmax_unique(self.q[self.last_state])
+    self.pi.update(self.last_state,a0)
+
+    self.last_state = s
+    self.last_action = a
+    return self.last_action
+
+  def end(self, r):
+    self.q[self.last_state][self.last_action] += self.alpha * (r - self.q[self.last_state][self.last_action])
+
+    a0 = misc.argmax_unique(self.q[self.last_state])
+    self.pi.update(self.last_state,a0)

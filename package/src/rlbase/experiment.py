@@ -11,6 +11,7 @@ class BaseExperiment:
         self.n_episodes = int(kwargs.get("n_episodes"))
         self.callback = kwargs.get("callback")
         self.agent.gamma = self.gamma
+        self.disable = not kwargs.get("show_progress",True)
         
     def episode(self):
       pass
@@ -39,7 +40,7 @@ class MC_EveryVisitExperiment(BaseExperiment):
     return ep
 
   def train(self):
-    for i in tqdm.tqdm(range(self.n_episodes)):
+    for i in tqdm.tqdm(range(self.n_episodes),disable=self.disable):
       ep = self.episode()
       if self.callback:
         self.callback(i,ep)
@@ -70,7 +71,7 @@ class MC_ExploringStartsExperiment(BaseExperiment):
     return ep  
     
   def train(self):
-    for i in tqdm.tqdm(range(self.n_episodes)): 
+    for i in tqdm.tqdm(range(self.n_episodes),disable=self.disable):
       ep = self.episode()
       G = 0
       set_sa = [(s,a) for (s,a,r) in ep[::-1]]
@@ -105,7 +106,7 @@ class MC_OffPolicyExperiment(BaseExperiment):
     return ep  
     
   def train(self):
-    for i in tqdm.tqdm(range(self.n_episodes)): 
+    for i in tqdm.tqdm(range(self.n_episodes),disable=self.disable):
       self.b = policy.EpsGreedy(env=self.env,eps=self.eps,det_policy=self.agent.pi)
       ep = self.episode()
       if self.callback:
@@ -141,7 +142,7 @@ class TD_CtrlExperiment(BaseExperiment):
     return ep
     
   def train(self):
-    for i in tqdm.tqdm(range(self.n_episodes)): 
+    for i in tqdm.tqdm(range(self.n_episodes),disable=self.disable):
       ep = self.episode()
       if self.callback:
         self.callback(i,ep)     
