@@ -603,3 +603,24 @@ class RandomWalkEnvironment(BaseEnvironment):
         if r == 0:
           return 1 - self.p
       return 0
+    
+class Ex67Environment(BaseEnvironment):
+  def __init__(self,**kwargs):
+    self.n = kwargs.get("n",10)
+    self.states = ["A","B"]
+    self.valid_actions = {}
+    self.valid_actions["A"] = ["l","r"]
+    self.valid_actions["B"] = list("l"+str(i) for i in range(self.n))
+    self.actions = self.valid_actions["A"] + self.valid_actions["B"]
+
+  def get_initial_state(self):
+    return "A"
+  
+  def step(self,s,a):
+    if s == "A":
+      if a == "l":
+        return 0, "B", False
+      else:
+        return 0, None, True
+    else:
+      return np.random.randn()-0.1, None, True

@@ -173,3 +173,44 @@ class ExpectedSarsaAgent(BaseAgent):
 
     a0 = misc.argmax_unique(self.q[self.last_state])
     self.pi.update(self.last_state,a0)
+    
+class DoubleQlearningAgent(BaseAgent):
+  def __init__(self,**kwargs):
+    super().__init__(**kwargs)
+    self.alpha = kwargs.get("alpha",0.5)
+    env = kwargs.get("env")
+    q_init = kwargs.get("q_init",0)
+    self.q1 = {s:{a:q_init for a in env.valid_actions[s]} for s in env.states}
+    self.q2 = {s:{a:q_init for a in env.valid_actions[s]} for s in env.states}
+
+  def start(self, s):
+    self.last_state = s
+    self.last_action = self.pi.get(s)
+    return self.last_action
+
+  def step(self, r, s):
+    a = self.pi.get(s)
+    if np.random.rand()<0.5:
+      a1 = misc.argmax_unique(self.q1[s])
+      self.q2[self.last_state][self.last_action] += self.alpha * (r + self.gamma * self.q2[s][a1] - self.q1[self.last_state][self.last_action])
+    else:
+      a1 = misc.argmax_unique(self.q2[s])
+      self.q1[self.last_state][self.last_action] += self.alpha * (r + self.gamma * self.q1[s][a1] - self.q2[self.last_state][self.last_action])
+
+    tmp_dict = {a:self.q1[self.last_state][a]+self.q2[self.last_state][a] for a in self.q[self.last_state].keys()}
+    a0 = misc.argmax_unique(tmp_dict)
+    self.pi.update(self.last_state,a0)
+
+    self.last_state = s
+    self.last_action = a
+    return self.last_action
+
+  def end(self, r):
+    if np.random.rand()<0.5:
+      self.q2[self.last_state][self.last_action] += self.alpha * (r - self.q1[self.last_state][self.last_action])
+    else:
+      self.q1[self.last_state][self.last_action] += self.alpha * (r - self.q2[self.last_state][self.last_action])
+
+    tmp_dict = {a:self.q1[self.last_state][a]+self.q2[self.last_state][a] for a in self.q[self.last_state].keys()}
+    a0 = misc.argmax_unique(tmp_dict)
+    self.pi.update(self.last_state,a0)
