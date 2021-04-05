@@ -145,4 +145,53 @@ class TD_CtrlExperiment(BaseExperiment):
     for i in tqdm.tqdm(range(self.n_episodes),disable=self.disable):
       ep = self.episode()
       if self.callback:
-        self.callback(i,ep)     
+        self.callback(i,ep)    
+        
+class DynQExperiment(BaseExperiment):
+  def __init__(self, **kwargs):
+    super().__init__(**kwargs)
+    self.model = {}
+    self.n = kwargs.get("n",5)
+    
+  def model_append(self,s,a,r,s_prime):
+    if s not in self.model.keys():
+      self.model[s] = {}
+    if a not in self.model[s].keys():
+      self.model[s][a] = (r,s_prime)
+  
+  def model_sample(self):
+    pl_s = misc.sample(list(self.model.keys()))
+    pl_a = misc.sample(list(self.model[pl_s].keys()))
+    pl_r, pl_s_prime = self.model[pl_s][pl_a]
+    return (pl_s,pl_a,pl_r,pl_s_prime)
+    
+  def episode(self):
+    s = self.env.get_initial_state()
+    a = self.agent.start(s)
+    ep = []
+    while True: 
+      r, s_prime, terminal = self.env.step(s,a)
+      self.model_append(s,a,r,s_prime)
+      ep.append((s,a,r))
+      if terminal:
+        self.agent.end(r)
+        break
+      a = self.agent.step(r,s_prime)
+      s = s_prime
+      # Planning
+      for i in range(self.n):
+        (pl_s,pl_a,pl_r,pl_s_prime) = self.model_sample()
+        if pl_s_prime:
+            a1 = misc.argmax_unique(self.agent.q[pl_s_prime])
+            self.agent.q[pl_s][pl_a] += self.agent.alpha * (pl_r + self.agent.gamma * self.agent.q[pl_s_prime][a1] - self.agent.q[pl_s][pl_a])
+        else:
+            self.agent.q[pl_s][pl_a] += self.agent.alpha * (pl_r - self.agent.q[pl_s][pl_a])
+        a0 = misc.argmax_unique(self.agent.q[pl_s])
+        self.agent.pi.update(pl_s,a0)
+    return ep
+    
+  def train(self):
+    for i in tqdm(range(self.n_episodes),disable=self.disable):
+      ep = self.episode()
+      if self.callback:
+        self.callback(i,ep)    

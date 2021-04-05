@@ -624,3 +624,31 @@ class Ex67Environment(BaseEnvironment):
         return 0, None, True
     else:
       return np.random.randn()-0.1, None, True
+    
+class MazeEnvironment(GridworldEnvironment):
+  def __init__(self,**kwargs):
+    super().__init__(sx=9,sy=6)
+    self.rewards = [0, 1]
+    self.start = kwargs.get("start",(0,3))
+    self.terminal_states = [kwargs.get("goal",(8,5))]
+    self.wall = [(2,2),(2,3),(2,4),(5,1),(7,3),(7,4),(7,5)]
+    self.set_all_actions_valid()
+              
+  def step(self,s,a):
+    x, y = s
+    
+    if "left" in a and x > 0:
+      x -= 1
+    if "right" in a and x < self.sx - 1:
+      x += 1
+    if "down" in a and y > 0:
+      y -= 1
+    if "up" in a and y < self.sy - 1:
+      y += 1 
+      
+    if (x,y) in self.wall:
+      return 0, s, False
+    if (x,y) in self.terminal_states:
+      return 1, None, True
+    return 0, (x,y), False
+  
