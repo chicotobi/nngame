@@ -147,7 +147,7 @@ class TD_CtrlExperiment(BaseExperiment):
       if self.callback:
         self.callback(i,ep)    
         
-class DynQExperiment(BaseExperiment):
+class DynaQExperiment(BaseExperiment):
   def __init__(self, **kwargs):
     super().__init__(**kwargs)
     self.model = {}
@@ -191,7 +191,7 @@ class DynQExperiment(BaseExperiment):
     return ep
     
   def train(self):
-    for i in tqdm(range(self.n_episodes),disable=self.disable):
+    for i in tqdm.tqdm(range(self.n_episodes),disable=self.disable):
       ep = self.episode()
       if self.callback:
         self.callback(i,ep)    
