@@ -285,7 +285,7 @@ class GridworldEnvironment(BaseEnvironment):
     tmp1, tmp2, tmp3 = self.step(s,a)
     return tmp1 == r and tmp2 == s_prime
 
-class GridworldEx35Environment(GridworldEnvironment):
+class GridworldEx35Environment(GridworldEnvironment): 
 
   def __init__(self):
     super().__init__(sx=5,sy=5)
@@ -651,4 +651,51 @@ class MazeEnvironment(GridworldEnvironment):
     if (x,y) in self.terminal_states:
       return 1, None, True
     return 0, (x,y), False
+  
+class ChangingMazeEnvironment(GridworldEnvironment):
+  def __init__(self,**kwargs):
+    super().__init__(sx=9,sy=6)
+    self.rewards = [0, 1]
+    self.start = kwargs.get("start",(3,0))
+    self.terminal_states = [kwargs.get("goal",(8,5))]
+    self.wall_always = [(1,2),(2,2),(3,2),(4,2),(5,2),(6,2),(7,2)]
+    self.set_all_actions_valid()
+    self.t = 0
+              
+  def step(self,s,a):
+    #print("in step(s,a): s=",s," a=",a)
+    self.t += 1
+    
+    x, y = s
+    
+    if "left" in a and x > 0:
+      x -= 1
+    if "right" in a and x < self.sx - 1:
+      x += 1
+    if "down" in a and y > 0:
+      y -= 1
+    if "up" in a and y < self.sy - 1:
+      y += 1 
+      
+    if (x,y) in self.wall:
+      return 0, s, False
+    if (x,y) in self.terminal_states:
+      return 1, None, True
+    return 0, (x,y), False
+
+class BlockingMazeEnvironment(ChangingMazeEnvironment):
+  def __init__(self,**kwargs):
+    super().__init__(**kwargs)
+    self.wall = self.wall_always + [(0,2)]
+    
+  def change(self):
+    self.wall = self.wall_always + [(8,2)]
+    
+class ShortcutMazeEnvironment(ChangingMazeEnvironment):
+  def __init__(self,**kwargs):
+    super().__init__(**kwargs)
+    self.wall = self.wall_always + [(8,2)]
+    
+  def change(self):
+    self.wall = self.wall_always
   

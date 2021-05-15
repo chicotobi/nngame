@@ -80,8 +80,8 @@ class MC_ExploringStartsExperiment(BaseExperiment):
         if (s,a) not in set_sa[idx+1:]:
           self.n_visits[s][a] += 1
           self.Q[s][a] += 1. / self.n_visits[s][a] * (G - self.Q[s][a])
-          a0 = misc.argmax_unique(self.Q[s])
-          self.agent.pi.update(s,a0)
+          best_actions = misc.argmax(self.Q[s])
+          self.agent.pi.update(s,best_actions)
 
 class MC_OffPolicyExperiment(BaseExperiment):
   def __init__(self, **kwargs):
@@ -119,7 +119,7 @@ class MC_OffPolicyExperiment(BaseExperiment):
         self.Q[s][a] += W/self.C[s][a] * (G - self.Q[s][a])
         a0 = misc.argmax_unique(self.Q[s])
         self.agent.pi.update(s,a0)
-        if a0 != a:
+        if a != a0:
           break
         W *= 1/self.b.prob(a,s)
 
@@ -147,23 +147,12 @@ class TD_CtrlExperiment(BaseExperiment):
       if self.callback:
         self.callback(i,ep)    
         
-class DynaQExperiment(BaseExperiment):
+class PlanExperiment(BaseExperiment):
   def __init__(self, **kwargs):
     super().__init__(**kwargs)
     self.model = {}
     self.n = kwargs.get("n",5)
-    
-  def model_append(self,s,a,r,s_prime):
-    if s not in self.model.keys():
-      self.model[s] = {}
-    if a not in self.model[s].keys():
-      self.model[s][a] = (r,s_prime)
-  
-  def model_sample(self):
-    pl_s = misc.sample(list(self.model.keys()))
-    pl_a = misc.sample(list(self.model[pl_s].keys()))
-    pl_r, pl_s_prime = self.model[pl_s][pl_a]
-    return (pl_s,pl_a,pl_r,pl_s_prime)
+    self.max_len = kwargs.get("max_len",float("inf"))
     
   def episode(self):
     s = self.env.get_initial_state()
@@ -173,6 +162,8 @@ class DynaQExperiment(BaseExperiment):
       r, s_prime, terminal = self.env.step(s,a)
       self.model_append(s,a,r,s_prime)
       ep.append((s,a,r))
+      if len(ep) == self.max_len:
+        return ep
       if terminal:
         self.agent.end(r)
         break
@@ -186,7 +177,7 @@ class DynaQExperiment(BaseExperiment):
             self.agent.q[pl_s][pl_a] += self.agent.alpha * (pl_r + self.agent.gamma * self.agent.q[pl_s_prime][a1] - self.agent.q[pl_s][pl_a])
         else:
             self.agent.q[pl_s][pl_a] += self.agent.alpha * (pl_r - self.agent.q[pl_s][pl_a])
-        a0 = misc.argmax_unique(self.agent.q[pl_s])
+        a0 = misc.argmax(self.agent.q[pl_s])
         self.agent.pi.update(pl_s,a0)
     return ep
     
@@ -195,3 +186,41 @@ class DynaQExperiment(BaseExperiment):
       ep = self.episode()
       if self.callback:
         self.callback(i,ep)    
+        
+class DynaQExperiment(PlanExperiment):
+  def __init__(self, **kwargs):
+    super().__init__(**kwargs)
+    
+  def model_append(self,s,a,r,s_prime):
+    if s not in self.model.keys():
+      self.model[s] = {}
+    self.model[s][a] = (r,s_prime)
+      
+  def model_sample(self):
+    pl_s = misc.sample(list(self.model.keys()))
+    pl_a = misc.sample(list(self.model[pl_s].keys()))
+    pl_r, pl_s_prime = self.model[pl_s][pl_a]
+    return (pl_s,pl_a,pl_r,pl_s_prime)
+  
+class DynaQPlusExperiment(PlanExperiment):
+  def __init__(self, **kwargs):
+    super().__init__(**kwargs)
+    self.weight = kwargs.get("weight")
+    self.actions = kwargs.get("actions")
+    self.t = 0
+    
+  def model_append(self,s,a,r,s_prime):
+    self.t += 1
+    if s not in self.model.keys():
+      self.model[s] = {}
+      for a0 in self.actions:
+        if a0 != a:
+          self.model[s][a0] = (0,s,1)
+    self.model[s][a] = (r,s_prime,self.t)
+      
+  def model_sample(self):
+    pl_s = misc.sample(list(self.model.keys()))
+    pl_a = misc.sample(list(self.model[pl_s].keys()))
+    pl_r, pl_s_prime, t0 = self.model[pl_s][pl_a]
+    pl_r += self.weight * (self.t - t0)**.5
+    return (pl_s,pl_a,pl_r,pl_s_prime)

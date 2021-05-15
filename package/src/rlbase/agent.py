@@ -50,7 +50,7 @@ class SimpleAgent(BaseAgent):
     else:
       tmp = self.q[self.last_state]
 
-    self.pi.update(self.last_state,misc.argmax_unique(tmp))
+    self.pi.update(self.last_state,misc.argmax(tmp))
     self.last_action = self.pi.get(s)
     return self.last_action
 
@@ -105,8 +105,8 @@ class SarsaAgent(BaseAgent):
 
     self.q[self.last_state][self.last_action] += self.alpha * (r + self.gamma * self.q[s][a] - self.q[self.last_state][self.last_action])
 
-    a0 = misc.argmax_unique(self.q[self.last_state])
-    self.pi.update(self.last_state,a0)
+    best_actions = misc.argmax(self.q[self.last_state])
+    self.pi.update(self.last_state,best_actions)
 
     self.last_state = s
     self.last_action = a
@@ -115,8 +115,8 @@ class SarsaAgent(BaseAgent):
   def end(self, r):
     self.q[self.last_state][self.last_action] += self.alpha * (r - self.q[self.last_state][self.last_action])
 
-    a0 = misc.argmax_unique(self.q[self.last_state])
-    self.pi.update(self.last_state,a0)
+    best_actions = misc.argmax(self.q[self.last_state])
+    self.pi.update(self.last_state,best_actions)
 
 class QlearningAgent(BaseAgent):
   def __init__(self,**kwargs):
@@ -133,8 +133,8 @@ class QlearningAgent(BaseAgent):
     a1 = misc.argmax_unique(self.q[s])
     self.q[self.last_state][self.last_action] += self.alpha * (r + self.gamma * self.q[s][a1] - self.q[self.last_state][self.last_action])
 
-    a0 = misc.argmax_unique(self.q[self.last_state])
-    self.pi.update(self.last_state,a0)
+    best_actions = misc.argmax(self.q[self.last_state])
+    self.pi.update(self.last_state,best_actions)
 
     self.last_state = s
     self.last_action = a
@@ -143,8 +143,8 @@ class QlearningAgent(BaseAgent):
   def end(self, r):
     self.q[self.last_state][self.last_action] += self.alpha * (r - self.q[self.last_state][self.last_action])
 
-    a0 = misc.argmax_unique(self.q[self.last_state])
-    self.pi.update(self.last_state,a0)
+    best_actions = misc.argmax(self.q[self.last_state])
+    self.pi.update(self.last_state,best_actions)
     
 class ExpectedSarsaAgent(BaseAgent):
   def __init__(self,**kwargs):
@@ -161,8 +161,8 @@ class ExpectedSarsaAgent(BaseAgent):
     exp_val = sum(self.pi.prob(a1,s) * val for (a1,val) in self.q[s].items())
     self.q[self.last_state][self.last_action] += self.alpha * (r + self.gamma * exp_val - self.q[self.last_state][self.last_action])
 
-    a0 = misc.argmax_unique(self.q[self.last_state])
-    self.pi.update(self.last_state,a0)
+    best_actions = misc.argmax(self.q[self.last_state])
+    self.pi.update(self.last_state,best_actions)
 
     self.last_state = s
     self.last_action = a
@@ -171,8 +171,8 @@ class ExpectedSarsaAgent(BaseAgent):
   def end(self, r):
     self.q[self.last_state][self.last_action] += self.alpha * (r - self.q[self.last_state][self.last_action])
 
-    a0 = misc.argmax_unique(self.q[self.last_state])
-    self.pi.update(self.last_state,a0)
+    best_actions = misc.argmax(self.q[self.last_state])
+    self.pi.update(self.last_state,best_actions)
     
 class DoubleQlearningAgent(BaseAgent):
   def __init__(self,**kwargs):
@@ -198,8 +198,8 @@ class DoubleQlearningAgent(BaseAgent):
       self.q1[self.last_state][self.last_action] += self.alpha * (r + self.gamma * self.q1[s][a1] - self.q2[self.last_state][self.last_action])
 
     tmp_dict = {a:self.q1[self.last_state][a]+self.q2[self.last_state][a] for a in self.q[self.last_state].keys()}
-    a0 = misc.argmax_unique(tmp_dict)
-    self.pi.update(self.last_state,a0)
+    best_actions = misc.argmax(tmp_dict)
+    self.pi.update(self.last_state,best_actions)
 
     self.last_state = s
     self.last_action = a
@@ -212,5 +212,5 @@ class DoubleQlearningAgent(BaseAgent):
       self.q1[self.last_state][self.last_action] += self.alpha * (r - self.q2[self.last_state][self.last_action])
 
     tmp_dict = {a:self.q1[self.last_state][a]+self.q2[self.last_state][a] for a in self.q[self.last_state].keys()}
-    a0 = misc.argmax_unique(tmp_dict)
-    self.pi.update(self.last_state,a0)
+    best_actions = misc.argmax(tmp_dict)
+    self.pi.update(self.last_state,best_actions)

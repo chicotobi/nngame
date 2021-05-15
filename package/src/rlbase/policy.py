@@ -3,6 +3,8 @@ import numpy.random as npr
 
 import rlbase.misc as misc
 
+from copy import deepcopy
+
 def transform_Q_to_BestAction(Q):
   return {s:misc.all_argmax(Q[s]) for s in Q.keys()}
 
@@ -54,24 +56,22 @@ class EpsGreedy(Policy):
     super().__init__(**kwargs)
     self.eps = kwargs.get("eps")
     if kwargs.get("det_policy"):
-      self.det_policy = kwargs.get("det_policy")
+      pol = kwargs.get("det_policy")
+      self.best_actions = {k:[v] for (k,v) in pol.det_actions.items()}
     else:
-      d = kwargs
-      d["valid_actions"] = self.valid_actions
-      self.det_policy = DeterministicPolicy(**d)
+      self.best_actions = deepcopy(self.valid_actions)
   def prob(self,a,s):
-    if a == self.det_policy.get(s):
-      return 1-self.eps+self.eps/self.n_valid_actions[s]
+    if a in self.best_actions[s]:
+      return self.eps/self.n_valid_actions[s] + (1-self.eps) / len(self.best_actions[s])
     else:
       return self.eps/self.n_valid_actions[s]
   def get(self,s):
-    a0 = self.det_policy.get(s)
     if npr.rand() > self.eps:
-      return a0
+      return misc.sample(self.best_actions[s])
     else:
       return misc.sample(self.valid_actions[s])
-  def update(self,s,a0):
-    self.det_policy.update(s,a0)
+  def update(self,s,best_a):
+    self.best_actions[s] = best_a
     
 class Softmax(Policy):
   def __init__(self,**kwargs):
