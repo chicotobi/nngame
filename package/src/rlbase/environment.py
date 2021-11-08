@@ -663,7 +663,6 @@ class ChangingMazeEnvironment(GridworldEnvironment):
     self.t = 0
               
   def step(self,s,a):
-    #print("in step(s,a): s=",s," a=",a)
     self.t += 1
     
     x, y = s
@@ -698,4 +697,128 @@ class ShortcutMazeEnvironment(ChangingMazeEnvironment):
     
   def change(self):
     self.wall = self.wall_always
+    
+class RodManeuverEnvironment(BaseEnvironment):   
+  
+  polys_coords = [[(3.03,16.32),(3.7,14.06),(5.37,15.75),(4.72,17.99)],
+               [(1.63,13.28),(4.19,11.59),(7.17,10.9),(4.63,12.59)],
+               [(4.1,10.19),(3.88,6),(7.26,3.49),(7.46,7.68)],
+               [(9.03,15.84),(9.83,13.79),(11.97,13.44),(11.19,15.46)],
+               [(16.23,16.5),(15.23,18.61),(17.37,17.63),(18.39,15.52)],
+               [(13.68,14.46),(12.99,10.42),(14.12,6.51),(14.81,10.5)],
+               [(12.9,5.44),(13.08,3.6),(14.5,2.4),(14.3,4.24)],
+               [(14.03,1.87),(15.92,3.09),(18.1,2.55),(16.21,1.31)]]
+  polys = None    
+  
+  solution = [(3,6,275),(3,6,285),(3,6,295),(3,6,305),(3,6,315),
+                  (3,6,325),(4,5,325),(5,4,325),(6,3,325),(7,2,325),
+                  (7,2,335),(8,2,335),(9,2,335),(10,2,335),(11,2,335),
+                  (11,2,325),(10,3,325),(10,3,315),(10,3,305),(10,3,295),
+                  (10,4,295),(10,5,295),(10,5,305),(9,6,305),(8,7,305),
+                  (8,7,295),(8,7,285),(8,7,275),(8,7,275),(8,7,275),
+                  (8,8,275),(8,9,275),(8,10,275),(8,11,275),(8,12,275),
+                  (8,13,275),(8,13,275),(8,14,275),(8,15,275),(8,15,265),
+                  (8,15,255),(8,15,245),(8,15,235),(9,16,235),(9,16,225),
+                  (9,16,215),(10,17,215),(10,17,205),(11,17,205),(11,17,195),
+                  (12,17,195),(12,17,185),(12,17,175),(12,17,165),(12,17,155),
+                  (12,17,145),(13,16,145),(14,15,145),(15,14,145),(16,13,145),
+                  (16,13,135),(16,13,125),(16,13,115),(16,13,105),(16,13,95),
+                  (16,13,85)]
+    
+  def state_to_line(self,s):
+    x, y, theta = s
+    theta = theta / 180 * math.pi
+    l = 3
+    return (x+l*math.cos(theta),
+            y+l*math.sin(theta),
+            x-l*math.cos(theta),
+            y-l*math.sin(theta)) 
+  
+  def is_valid_state(self,s):
+    import shapely.geometry
+    is_valid = True
+    x1, y1, x2, y2 = self.state_to_line(s)
+    if 0 <= x1 <= 19 and 0 <= x2 <= 19 and 0 <= y1 <= 19 and 0 <= y2 <= 19:
+      line = shapely.geometry.LineString([(x1,y1),(x2,y2)])
+      for poly in self.polys:
+        if poly.crosses(line):
+          is_valid = False
+      return is_valid
+    else:
+      return False
+  
+  def plot_states(self,states=[]):
+    import matplotlib.pyplot as plt
+    for i in range(20):
+      plt.plot([0,19],[i,i],"#aaaaaa",zorder=0,linewidth=1)
+      plt.plot([i,i],[0,19],"#aaaaaa",zorder=0)
+    for s in states:
+      x1, y1, x2, y2 = self.state_to_line(s)
+      if self.is_valid_state(s):
+        c = "b"
+      else:
+        c = "r"
+      plt.plot([x1,x2],[y1,y2],c)
+      plt.plot(x1,y1,c+"o")
+      plt.plot(s[0],s[1],c+"x")
+    for p in self.polys:
+      x = [x for (x,y) in p.exterior.coords]
+      y = [y for (x,y) in p.exterior.coords]
+      plt.fill(x,y,"k")
+    plt.axis('off')
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.show()
+    plt.draw()
+  
+  def step(self,s,a):
+    x, y, theta = s
+    
+    if a == "l":
+      theta  = (theta+10)%360
+    elif a == "r":
+      theta  = (theta-10)%360
+    elif a in ["f","b"]:
+      if a == "b":
+        t0 = (theta + 180) % 360
+      else:
+        t0 = theta
+      
+      if 0 < t0 < 60 or 300 < t0 < 360:
+        x += 1
+      elif 120 < t0 < 240:
+        x -= 1
+      if 30 < t0 < 150:
+        y += 1
+      elif 210 < t0 < 330:
+        y -= 1
+    else:
+      raise ValueError("Invalid action")
+      
+    if self.is_valid_state((x,y,theta)):
+      s_prime = (x,y,theta)  
+    else:
+      s_prime = s
+    return s_prime, -1
+    
+  def __init__(self,**kwargs):
+    import shapely.geometry        
+    self.polys = []
+    for p in self.polys_coords:
+      self.polys.append(shapely.geometry.Polygon(p))
+          
+    self.states = []
+    for x in range(20):
+      for y in range(20):
+        for t in range(36):
+          self.states.append((x,y,5+10*t))
+    
+    self.actions = ["l","r","f","b"]
+    
+    self.set_all_actions_valid()
+    
+    self.start = (3,6,275)
+    self.goal = (16,13,85)
+
+  def start(self):
+    return self.start
   
